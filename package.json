@@ -1,0 +1,31 @@
+{
+    "name": "parameter-flow",
+    "version": "0.0.1",
+    "description": "A minimalistic yet powerful parameter timeline editor and runtime for web demos.",
+    "main": "src/index.js",
+    "scripts": {
+        "build": "webpack --mode=production --node-env=production",
+        "build:dev": "webpack --mode=development",
+        "build:prod": "webpack --mode=production --node-env=production"
+    },
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/felixbade/parameter-flow.git"
+    },
+    "keywords": [
+        "demoscene",
+        "timeline",
+        "parameter",
+        "animation"
+    ],
+    "author": "Felix Bade",
+    "license": "ISC",
+    "bugs": {
+        "url": "https://github.com/felixbade/parameter-flow/issues"
+    },
+    "homepage": "https://github.com/felixbade/parameter-flow#readme",
+    "devDependencies": {
+        "webpack": "^5.88.1",
+        "webpack-cli": "^5.1.4"
+    }
+}
