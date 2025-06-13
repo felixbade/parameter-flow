@@ -10,6 +10,17 @@ export class TimelinePlayer extends Player {
         if (config.keyboardListener !== false) {
             this._setupKeyboardListener();
         }
+
+        this.element = document.createElement('div');
+        this.element.style.position = 'absolute';
+        this.element.style.bottom = '0';
+        this.element.style.left = '0';
+        this.element.style.width = '100%';
+        this.element.style.height = '100px';
+        this.element.style.backgroundColor = 'rgba(0, 0, 0, 0.5)';
+        this.element.style.color = 'white';
+        this.element.style.fontSize = '16px';
+        this.element.style.padding = '10px';
     }
 
     _setupKeyboardListener() {

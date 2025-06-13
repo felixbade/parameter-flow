@@ -27,6 +27,7 @@
         const { TimelinePlayer } = ParameterFlow;
 
         const player = new TimelinePlayer();
+        document.body.appendChild(player.element);
 
         const canvas = document.querySelector('#canvas');
         const ctx = canvas.getContext('2d');
