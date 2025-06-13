@@ -23,6 +23,29 @@ A minimalistic yet powerful parameter timeline editor and runtime for web demos.
 - Parameters are fully configured from the code, i.e. they can't be added from the timeline editor.
 - Time quantization happens only in the editor. The data format is continuous, and can't be converted into a spreadsheet/tracker format easily.
 
+## Importing
+
+### URL
+
+```html
+<script src="https://cdn.jsdelivr.net/npm/parameter-flow@0.2.0/dist/main.js"></script>
+```
+
+```javascript
+const { TimelinePlayer } = ParameterFlow
+```
+
+### NPM
+```sh
+npm install parameter-flow
+```
+
+```javascript
+import { TimelinePlayer } from 'parameter-flow'
+```
+
+See [examples/index.html](examples/index.html) for a complete example.
+
 ## `Player`
 
 ### Properties
@@ -73,6 +96,25 @@ setTimeout(() => {
 // Seek to 10 seconds
 player.seek(10);
 ```
+
+## `TimelinePlayer`
+Like `Player`, but with a UI for time navigation.
+
+### Constructor
+```javascript
+const player = new TimelinePlayer({
+    // Length of the timeline in seconds
+    duration: 10,
+
+    // Defaults to true. Set to false if you want to handle keyboard input yourself
+    keyboardListener: true,
+});
+```
+
+- `element`: The DOM element of the timeline player. Do `document.body.appendChild(player.element)` to add it to the page.
+- Hovering over the timeline when it's paused will set the current time.
+- Space will toggle pause.
+- 0 will seek to the start and pause.
 
 ## Inspiration
 - [Rocket](https://github.com/rocket/rocket)
