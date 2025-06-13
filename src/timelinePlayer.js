@@ -6,7 +6,6 @@ export class TimelinePlayer extends Player {
         this.duration = config.duration || 10;
         this.bpm = config.bpm || 120;
 
-        // Add keyboard listener unless explicitly disabled
         if (config.keyboardListener !== false) {
             this._setupKeyboardListener();
         }
@@ -64,12 +63,9 @@ export class TimelinePlayer extends Player {
         }).bind(this);
 
         window.addEventListener('keydown', handleKeyPress);
-
-        // Store the listener for potential cleanup
         this._keyboardListener = handleKeyPress;
     }
 
-    // Cleanup method to remove keyboard listener
     destroy() {
         if (this._keyboardListener) {
             window.removeEventListener('keydown', this._keyboardListener);

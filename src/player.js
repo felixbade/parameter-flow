@@ -6,7 +6,6 @@ export class Player extends EventTarget {
         this._paused = true
     }
 
-    // Public getters for state
     get currentTime() {
         if (this._paused) {
             return this._currentTime
@@ -19,7 +18,6 @@ export class Player extends EventTarget {
         return this._paused
     }
 
-    // Play method
     play() {
         if (this._paused) {
             this._startTime = Date.now() - (this._currentTime * 1000)
@@ -29,7 +27,6 @@ export class Player extends EventTarget {
         }
     }
 
-    // Pause method
     pause() {
         if (!this._paused) {
             this._currentTime = (Date.now() - this._startTime) / 1000
@@ -39,7 +36,6 @@ export class Player extends EventTarget {
         }
     }
 
-    // Seek method
     seek(time) {
         if (typeof time !== 'number' || time < 0) {
             throw new Error('Seek time must be a non-negative number')
