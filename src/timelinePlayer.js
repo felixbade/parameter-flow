@@ -3,7 +3,7 @@ import { Player } from './player.js';
 export class TimelinePlayer extends Player {
     constructor(config = {}) {
         super();
-        this.duration = config.duration || 0;
+        this.duration = config.duration || 10;
         this.bpm = config.bpm || 120;
 
         // Add keyboard listener unless explicitly disabled
@@ -16,11 +16,17 @@ export class TimelinePlayer extends Player {
         this.element.style.bottom = '0';
         this.element.style.left = '0';
         this.element.style.width = '100%';
-        this.element.style.height = '100px';
+        this.element.style.height = '50px';
         this.element.style.backgroundColor = 'rgba(0, 0, 0, 0.5)';
-        this.element.style.color = 'white';
-        this.element.style.fontSize = '16px';
-        this.element.style.padding = '10px';
+
+        this.element.addEventListener('mousemove', ((event) => {
+            if (this.paused) {
+                const rect = this.element.getBoundingClientRect();
+                const x = event.clientX - rect.left;
+                const position = x / rect.width * this.duration;
+                this.seek(position);
+            }
+        }).bind(this));
     }
 
     _setupKeyboardListener() {
