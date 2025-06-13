@@ -27,6 +27,24 @@ export class TimelinePlayer extends Player {
                 this.seek(position);
             }
         }).bind(this));
+
+        this.positionBar = document.createElement('div');
+        this.positionBar.style.position = 'absolute';
+        this.positionBar.style.top = '0';
+        this.positionBar.style.width = '2px';
+        this.positionBar.style.height = '100%';
+        this.positionBar.style.backgroundColor = 'white';
+        this.positionBar.style.pointerEvents = 'none';
+        this.element.appendChild(this.positionBar);
+
+        this._animate = this._animate.bind(this);
+        this._animate();
+    }
+
+    _animate() {
+        const position = this.currentTime / this.duration;
+        this.positionBar.style.left = `${position * 100}%`;
+        requestAnimationFrame(this._animate);
     }
 
     _setupKeyboardListener() {
