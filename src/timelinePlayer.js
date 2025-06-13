@@ -56,7 +56,6 @@ export class TimelinePlayer extends Player {
                     this.pause();
                 }
             } else if (event.code === 'Digit0') {
-                event.preventDefault();
                 this.pause();
                 this.seek(0);
             }
