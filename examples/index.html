@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- replace the appropriate script URL to parameter flow's main.js -->
+    <script src="../dist/main.js"></script>
+    <!-- <script src="https://cdn.jsdelivr.net/npm/parameter-flow@0.1.0/dist/main.js"></script> -->
+    <style>
+        canvas {
+            width: 100vw;
+            height: 100vh;
+            display: block;
+        }
+
+        body {
+            margin: 0;
+            overflow: hidden;
+        }
+    </style>
+</head>
+
+<body>
+    <canvas id="canvas"></canvas>
+    <script>
+        const { TimelinePlayer } = ParameterFlow;
+
+        const player = new TimelinePlayer();
+
+        const canvas = document.querySelector('#canvas');
+        const ctx = canvas.getContext('2d');
+
+        // Set canvas size to match window size
+        function resizeCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        }
+        resizeCanvas();
+        window.addEventListener('resize', resizeCanvas);
+
+        const render = () => {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // Get current time
+            const time = player.currentTime;
+
+            // Calculate circle position based on time
+            const x = canvas.width / 2 + Math.cos(time) * 200;
+            const y = canvas.height / 2 + Math.sin(time) * 200;
+
+            // Calculate color based on time
+            const hue = (time * 50) % 360;
+            ctx.fillStyle = `hsl(${hue}, 70%, 50%)`;
+
+            // Draw circle
+            ctx.beginPath();
+            ctx.arc(x, y, 50, 0, Math.PI * 2);
+            ctx.fill();
+
+            requestAnimationFrame(render);
+        }
+        render();
+    </script>
+</body>
+
+</html>
