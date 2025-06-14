@@ -1,10 +1,23 @@
-import { Player } from './player.js';
+import { Player } from './player';
+
+interface TimelinePlayerConfig {
+    duration?: number;
+    bpm?: number;
+    keyboardListener?: boolean;
+}
 
 export class TimelinePlayer extends Player {
-    constructor(config = {}) {
+    public duration: number;
+    public bpm: number;
+    public element: HTMLDivElement;
+    public positionBar: HTMLDivElement;
+    private _keyboardListener: ((event: KeyboardEvent) => void) | null;
+
+    constructor(config: TimelinePlayerConfig = {}) {
         super();
         this.duration = config.duration || 10;
         this.bpm = config.bpm || 120;
+        this._keyboardListener = null;
 
         if (config.keyboardListener !== false) {
             this._setupKeyboardListener();
@@ -18,7 +31,7 @@ export class TimelinePlayer extends Player {
         this.element.style.height = '50px';
         this.element.style.backgroundColor = 'rgba(0, 0, 0, 0.5)';
 
-        this.element.addEventListener('mousemove', ((event) => {
+        this.element.addEventListener('mousemove', ((event: MouseEvent) => {
             if (this.paused) {
                 const rect = this.element.getBoundingClientRect();
                 const x = event.clientX - rect.left;
@@ -40,14 +53,14 @@ export class TimelinePlayer extends Player {
         this._animate();
     }
 
-    _animate() {
+    private _animate(): void {
         const position = this.currentTime / this.duration;
         this.positionBar.style.left = `${position * 100}%`;
         requestAnimationFrame(this._animate);
     }
 
-    _setupKeyboardListener() {
-        const handleKeyPress = ((event) => {
+    private _setupKeyboardListener(): void {
+        const handleKeyPress = ((event: KeyboardEvent) => {
             if (event.code === 'Space') {
                 event.preventDefault(); // Prevent page scroll
                 if (this.paused) {
@@ -65,7 +78,7 @@ export class TimelinePlayer extends Player {
         this._keyboardListener = handleKeyPress;
     }
 
-    destroy() {
+    public destroy(): void {
         if (this._keyboardListener) {
             window.removeEventListener('keydown', this._keyboardListener);
             this._keyboardListener = null;

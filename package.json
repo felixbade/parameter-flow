@@ -2,11 +2,13 @@
     "name": "parameter-flow",
     "version": "0.2.0",
     "description": "A minimalistic yet powerful parameter timeline editor and runtime for web demos.",
-    "main": "src/index.js",
+    "main": "dist/main.js",
+    "types": "dist/index.d.ts",
     "scripts": {
         "build": "webpack --mode=production --node-env=production",
         "build:dev": "webpack --mode=development",
-        "build:prod": "webpack --mode=production --node-env=production"
+        "build:prod": "webpack --mode=production --node-env=production",
+        "type-check": "tsc --noEmit"
     },
     "repository": {
         "type": "git",
@@ -25,6 +27,9 @@
     },
     "homepage": "https://github.com/felixbade/parameter-flow#readme",
     "devDependencies": {
+        "@types/node": "^20.11.24",
+        "ts-loader": "^9.5.1",
+        "typescript": "^5.3.3",
         "webpack": "^5.88.1",
         "webpack-cli": "^5.1.4"
     }
