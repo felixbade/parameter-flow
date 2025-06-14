@@ -1,20 +1,22 @@
 export class Player extends EventTarget {
+    public duration: number;
     private _currentTime: number;
     private _startTime: number | null;
     private _paused: boolean;
 
-    constructor() {
+    constructor(config: { duration?: number } = {}) {
         super();
         this._currentTime = 0;
         this._startTime = null;
         this._paused = true;
+        this.duration = config.duration ?? Infinity;
     }
 
     get currentTime(): number {
         if (this._paused) {
-            return this._currentTime;
+            return Math.min(this._currentTime, this.duration);
         } else {
-            return (Date.now() - this._startTime!) / 1000;
+            return Math.min((Date.now() - this._startTime!) / 1000, this.duration);
         }
     }
 

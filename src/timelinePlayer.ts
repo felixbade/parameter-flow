@@ -1,21 +1,19 @@
 import { Player } from './player';
 
 interface TimelinePlayerConfig {
-    duration?: number;
+    duration: number;
     bpm?: number;
     keyboardListener?: boolean;
 }
 
 export class TimelinePlayer extends Player {
-    public duration: number;
     public bpm: number;
     public element: HTMLDivElement;
     public positionBar: HTMLDivElement;
     private _keyboardListener: ((event: KeyboardEvent) => void) | null;
 
-    constructor(config: TimelinePlayerConfig = {}) {
-        super();
-        this.duration = config.duration || 10;
+    constructor(config: TimelinePlayerConfig = { duration: 10 }) {
+        super(config);
         this.bpm = config.bpm || 120;
         this._keyboardListener = null;
 
@@ -34,6 +32,7 @@ export class TimelinePlayer extends Player {
         this.element.addEventListener('mousemove', ((event: MouseEvent) => {
             if (this.paused) {
                 const rect = this.element.getBoundingClientRect();
+                // TODO: consider cursor element's width
                 const x = event.clientX - rect.left;
                 const position = x / rect.width * this.duration;
                 this.seek(position);
@@ -44,6 +43,7 @@ export class TimelinePlayer extends Player {
         this.positionBar.style.position = 'absolute';
         this.positionBar.style.top = '0';
         this.positionBar.style.width = '2px';
+        this.positionBar.style.transform = 'translateX(-50%)';
         this.positionBar.style.height = '100%';
         this.positionBar.style.backgroundColor = 'white';
         this.positionBar.style.pointerEvents = 'none';
@@ -55,6 +55,7 @@ export class TimelinePlayer extends Player {
 
     private _animate(): void {
         const position = this.currentTime / this.duration;
+        // TODO: consider cursor element's width
         this.positionBar.style.left = `${position * 100}%`;
         requestAnimationFrame(this._animate);
     }
