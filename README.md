@@ -62,7 +62,7 @@ const player = new Player({
 - `paused`: Returns a boolean indicating whether playback is currently paused.
 
 ### Methods
-- `play()`: Starts playback from the current time position. Dispatches a `play` event.
+- `play()`: Starts playback from the current time position. Dispatches a `play` event. If the player is already playing or at the end, this does nothing.
 - `pause()`: Pauses playback at the current time. Dispatches a `pause` event.
 - `seek(time)`: Sets the playback position to the specified time in seconds. Dispatches a `seek` event with details about the time change.
 

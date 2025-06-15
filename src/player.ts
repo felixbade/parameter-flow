@@ -46,7 +46,7 @@ export class Player extends EventTarget {
     }
 
     play(): void {
-        if (this._paused) {
+        if (this._paused && this.currentTime < this.duration) {
             this._startTime = Date.now() - (this._currentTime * 1000);
             this._currentTime = 0;
             this._paused = false;
