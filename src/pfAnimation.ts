@@ -21,8 +21,12 @@ export class PFAnimation {
             // time <= startTime of first segment
             if (time <= parameter[0].time) {
                 values[key] = parameter[0].value;
+                const timeDelta = parameter[0].time - time;
                 if (parameter[0].speed) {
-                    values[key] -= parameter[0].speed * (parameter[0].time - time);
+                    values[key] -= parameter[0].speed * timeDelta;
+                }
+                if (parameter[0].acceleration) {
+                    values[key] -= parameter[0].acceleration * timeDelta * timeDelta / 2;
                 }
                 continue;
             }
@@ -31,8 +35,12 @@ export class PFAnimation {
             const lastSegment = parameter[parameter.length - 1];
             if (time >= lastSegment.time) {
                 values[key] = lastSegment.value;
+                const timeDelta = time - lastSegment.time;
                 if (lastSegment.speed) {
-                    values[key] += lastSegment.speed * (time - lastSegment.time);
+                    values[key] += lastSegment.speed * timeDelta;
+                }
+                if (lastSegment.acceleration) {
+                    values[key] += lastSegment.acceleration * timeDelta * timeDelta / 2;
                 }
                 continue;
             }
@@ -73,10 +81,10 @@ export class PFAnimation {
 
             // Second derivative control points
             const p2 = a0 !== undefined
-                ? p1 + a0 * duration * duration / 20
+                ? p1 + a0 * duration * duration / 2 / 10
                 : p1 + (p4 - p1) / 3;
             const p3 = a1 !== undefined
-                ? p4 - a1 * duration * duration / 20
+                ? p4 - a1 * duration * duration / 2 / 10
                 : p4 - (p4 - p1) / 3;
 
             // Quintic Bezier curve calculation
