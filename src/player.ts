@@ -93,6 +93,8 @@ export class Player extends EventTarget {
             }
         }));
 
-        this._setupEndTimeout();
+        if (!this.paused) {
+            this._setupEndTimeout();
+        }
     }
 }
