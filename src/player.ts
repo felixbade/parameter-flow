@@ -23,8 +23,8 @@ export class Player extends EventTarget {
     }
 
     get paused(): boolean {
-        // this condition is necessary because there is nothing setting
-        // `_paused` to true when the player reaches the end
+        // potentially overkill failsafe but *in theory* the end timeout
+        // might be triggered a tiny bit after it should be.
         return this._paused || this.currentTime >= this.duration;
     }
 
