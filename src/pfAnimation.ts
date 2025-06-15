@@ -72,20 +72,12 @@ export class PFAnimation {
             const p5 = v1;
 
             // First derivative control points
-            const p1 = d0 !== undefined
-                ? v0 + d0 * duration / 5
-                : v0 + (v1 - v0) / 5;
-            const p4 = d1 !== undefined
-                ? v1 - d1 * duration / 5
-                : v1 - (v1 - v0) / 5;
+            const p1 = v0 + d0 * duration / 5;
+            const p4 = v1 - d1 * duration / 5;
 
             // Second derivative control points
-            const p2 = a0 !== undefined
-                ? p1 + a0 * duration * duration / 2 / 10
-                : p1 + (p4 - p1) / 3;
-            const p3 = a1 !== undefined
-                ? p4 - a1 * duration * duration / 2 / 10
-                : p4 - (p4 - p1) / 3;
+            const p2 = p1 + d0 * duration / 5 + a0 * duration * duration / 20;
+            const p3 = p4 - d1 * duration / 5 - a1 * duration * duration / 20;
 
             // Quintic Bezier curve calculation
             const oneMinusT = 1 - t;
