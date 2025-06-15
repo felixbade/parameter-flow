@@ -24,11 +24,11 @@
 <body>
     <canvas id="canvas"></canvas>
     <script>
-        const { TimelinePlayer, JSONSampler } = ParameterFlow;
+        const { TimelinePlayer, PFAnimation } = ParameterFlow;
 
         const player = new TimelinePlayer();
         document.body.appendChild(player.element);
-        const sampler = new JSONSampler({
+        const animation = new PFAnimation({
             x: [
                 {
                     startTime: 0,
@@ -186,7 +186,7 @@
         const render = () => {
             gl.useProgram(program);
 
-            const { x, y, zoomLog } = sampler.getValuesAt(player.currentTime);
+            const { x, y, zoomLog } = animation.getValuesAt(player.currentTime);
             const zoom = Math.pow(2, zoomLog);
 
             // Set uniforms

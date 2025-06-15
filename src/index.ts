@@ -1,5 +1,5 @@
 import { Player } from './player';
 import { TimelinePlayer } from './timelinePlayer';
-import { JSONSampler } from './jsonSampler';
+import { PFAnimation } from './jsonSampler';
 
-export { Player, TimelinePlayer, JSONSampler };
+export { Player, TimelinePlayer, PFAnimation };

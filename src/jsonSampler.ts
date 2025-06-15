@@ -7,7 +7,7 @@ interface ParameterSegment {
     endSpeed?: number;
 }
 
-export class JSONSampler {
+export class PFAnimation {
     private _parameters: Record<string, ParameterSegment[]>;
 
     constructor(public parameters: Record<string, ParameterSegment[]>) {
