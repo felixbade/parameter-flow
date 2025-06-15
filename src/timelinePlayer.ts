@@ -89,6 +89,9 @@ export class TimelinePlayer extends Player {
             if (event.code === 'Space') {
                 event.preventDefault(); // Prevent page scroll
                 if (this.paused) {
+                    if (this.currentTime >= this.duration) {
+                        this.seek(0);
+                    }
                     this.play();
                 } else {
                     this.pause();

@@ -8,10 +8,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## Unreleased
 
 ### Added
-- `JSONSampler` class that does cubic bezier interpolation between keyframes
+- `JSONSampler` class that does cubic bezier interpolation between keyframes.
 
 ### Changed
-- Renamed `examples/index.html` to `examples/playback.html`
+- Renamed `examples/index.html` to `examples/playback.html`.
+- Pressing space at the end will play again from the beginning.
 
 ## [0.4.1] - 2025-06-15
 
