@@ -70,9 +70,11 @@ export class Player extends EventTarget {
     }
 
     seek(time: number): void {
-        if (typeof time !== 'number' || time < 0) {
-            throw new Error('Seek time must be a non-negative number');
+        if (typeof time !== 'number') {
+            throw new Error('Seek time must be a number');
         }
+
+        time = Math.max(0, Math.min(time, this.duration));
 
         if (this.paused) {
             // because when the player reaches the end, it will be paused automatically

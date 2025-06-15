@@ -55,10 +55,10 @@ const player = new Player({
 });
 ```
 
-- `duration`: The length of the timeline in seconds. Defaults to `Infinity`.
+- `duration`: The length of the timeline in seconds. Defaults to `Infinity`. When the current time reaches the duration, the player is automatically paused and an `end` event is dispatched.
 
 ### Properties
-- `currentTime`: Returns the current playback time in seconds.
+- `currentTime`: Returns the current playback time in seconds. Guaranteed to be between 0 and `duration`.
 - `paused`: Returns a boolean indicating whether playback is currently paused.
 
 ### Methods
