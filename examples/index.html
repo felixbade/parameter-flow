@@ -29,6 +29,18 @@
         const player = new TimelinePlayer();
         document.body.appendChild(player.element);
 
+        player.addEventListener('play', () => {
+            console.log('play');
+        });
+
+        player.addEventListener('pause', () => {
+            console.log('pause');
+        });
+
+        player.addEventListener('end', () => {
+            console.log('end');
+        });
+
         const canvas = document.querySelector('#canvas');
         const ctx = canvas.getContext('2d');
 

@@ -48,6 +48,15 @@ See [examples/index.html](examples/index.html) for a complete example.
 
 ## `Player`
 
+### Constructor
+```javascript
+const player = new Player({
+    duration: 10,
+});
+```
+
+- `duration`: The length of the timeline in seconds. Defaults to `Infinity`.
+
 ### Properties
 - `currentTime`: Returns the current playback time in seconds.
 - `paused`: Returns a boolean indicating whether playback is currently paused.
@@ -63,39 +72,7 @@ The Player dispatches the following events:
 - `pause`: Fired when playback is paused
 - `seek`: Fired when the playback position changes, includes:
   - `detail.time`: New playback position
-
-### Example Usage
-```javascript
-const player = new Player();
-
-player.addEventListener('play', () => {
-    console.log('Playback started');
-});
-
-player.addEventListener('pause', () => {
-    console.log('Playback paused');
-});
-
-player.addEventListener('seek', (e) => {
-    console.log(`Seeked to ${e.detail.time}`);
-});
-
-// Start playback
-player.play();
-
-// Print current time after 2 seconds
-setTimeout(() => {
-    console.log(`Current time: ${player.currentTime}`);
-}, 2000);
-
-// Pause after 5 seconds
-setTimeout(() => {
-    player.pause();
-}, 5000);
-
-// Seek to 10 seconds
-player.seek(10);
-```
+- `end`: Fired when playback reaches the end of the timeline. Note that this makes the player paused but does NOT dispatch a `pause` event.
 
 ## `TimelinePlayer`
 Like `Player`, but with a UI for time navigation.

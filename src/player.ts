@@ -3,6 +3,7 @@ export class Player extends EventTarget {
     private _currentTime: number;
     private _startTime: number | null;
     private _paused: boolean;
+    private _endTimeout: number | null;
 
     constructor(config: { duration?: number } = {}) {
         super();
@@ -10,6 +11,7 @@ export class Player extends EventTarget {
         this._startTime = null;
         this._paused = true;
         this.duration = config.duration ?? Infinity;
+        this._endTimeout = null;
     }
 
     get currentTime(): number {
@@ -26,12 +28,30 @@ export class Player extends EventTarget {
         return this._paused || this.currentTime >= this.duration;
     }
 
+    private _setupEndTimeout(): void {
+        if (this._endTimeout !== null) {
+            window.clearTimeout(this._endTimeout);
+            this._endTimeout = null;
+        }
+
+        if (this.duration !== Infinity) {
+            const timeUntilEnd = (this.duration - this.currentTime) * 1000;
+            this._endTimeout = window.setTimeout(() => {
+                this._currentTime = this.duration;
+                this._startTime = null;
+                this._paused = true;
+                this.dispatchEvent(new Event('end'));
+            }, timeUntilEnd);
+        }
+    }
+
     play(): void {
         if (this._paused) {
             this._startTime = Date.now() - (this._currentTime * 1000);
             this._currentTime = 0;
             this._paused = false;
             this.dispatchEvent(new Event('play'));
+            this._setupEndTimeout();
         }
     }
 
@@ -41,6 +61,11 @@ export class Player extends EventTarget {
             this._startTime = null;
             this._paused = true;
             this.dispatchEvent(new Event('pause'));
+
+            if (this._endTimeout !== null) {
+                window.clearTimeout(this._endTimeout);
+                this._endTimeout = null;
+            }
         }
     }
 
@@ -65,5 +90,7 @@ export class Player extends EventTarget {
                 time
             }
         }));
+
+        this._setupEndTimeout();
     }
 }
