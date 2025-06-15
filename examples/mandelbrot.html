@@ -32,10 +32,11 @@
             x: [
                 {
                     startTime: 0,
-                    endTime: 10,
+                    endTime: 1.5,
                     startValue: -0.5,
-                    endValue: -0.5,
-                }
+                    endValue: 0.25,
+                    endSpeed: 0,
+                },
             ],
             y: [
                 {
@@ -43,16 +44,24 @@
                     endTime: 10,
                     startValue: 0.0,
                     endValue: -0.0,
-                }
+                },
             ],
-            zoom: [
+            zoomLog: [
                 {
                     startTime: 0,
                     endTime: 1,
-                    startValue: 0.5,
-                    endValue: 1.0,
+                    startValue: 0,
+                    endValue: 0,
                     endSpeed: 0.1,
-                }
+                },
+                {
+                    startTime: 1,
+                    endTime: 5,
+                    startValue: 0,
+                    endValue: 10,
+                    startSpeed: 0.1,
+                    endSpeed: 0,
+                },
             ],
         });
 
@@ -177,7 +186,8 @@
         const render = () => {
             gl.useProgram(program);
 
-            const { x, y, zoom } = sampler.getValuesAt(player.currentTime);
+            const { x, y, zoomLog } = sampler.getValuesAt(player.currentTime);
+            const zoom = Math.pow(2, zoomLog);
 
             // Set uniforms
             gl.uniform2f(centerLocation, x, y); // Center of Mandelbrot set
