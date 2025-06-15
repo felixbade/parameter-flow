@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
+### Added
+- `JSONSampler` class that does linear interpolation between keyframes
+
 ### Changed
 - Renamed `examples/index.html` to `examples/playback.html`
 

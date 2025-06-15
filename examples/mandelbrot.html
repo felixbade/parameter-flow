@@ -29,9 +29,30 @@
         const player = new TimelinePlayer();
         document.body.appendChild(player.element);
         const sampler = new JSONSampler({
-            x: -0.5,
-            y: 0.0,
-            zoom: 0.5,
+            x: [
+                {
+                    startTime: 0,
+                    endTime: 10,
+                    startValue: -0.5,
+                    endValue: 0.5
+                }
+            ],
+            y: [
+                {
+                    startTime: 0,
+                    endTime: 10,
+                    startValue: 0.0,
+                    endValue: 0.0
+                }
+            ],
+            zoom: [
+                {
+                    startTime: 0,
+                    endTime: 1,
+                    startValue: 0.5,
+                    endValue: 1.0
+                }
+            ],
         });
 
         player.addEventListener('play', () => {
