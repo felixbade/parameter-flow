@@ -11,11 +11,17 @@ export class TimelinePlayer extends Player {
     public element: HTMLDivElement;
     public positionBar: HTMLDivElement;
     private _keyboardListener: ((event: KeyboardEvent) => void) | null;
+    private _handleMouseMove: ((event: MouseEvent) => void) | null;
+    private _handleMouseUp: (() => void) | null;
+    private _isDragging: boolean;
 
     constructor(config: TimelinePlayerConfig = { duration: 10 }) {
         super(config);
         this.bpm = config.bpm || 120;
         this._keyboardListener = null;
+        this._handleMouseMove = null;
+        this._handleMouseUp = null;
+        this._isDragging = false;
 
         if (config.keyboardListener !== false) {
             this._setupKeyboardListener();
@@ -29,15 +35,33 @@ export class TimelinePlayer extends Player {
         this.element.style.height = '50px';
         this.element.style.backgroundColor = 'rgba(0, 0, 0, 0.5)';
 
-        this.element.addEventListener('mousemove', ((event: MouseEvent) => {
-            if (this.paused) {
-                const rect = this.element.getBoundingClientRect();
-                // TODO: consider cursor element's width
-                const x = event.clientX - rect.left;
-                const position = x / rect.width * this.duration;
-                this.seek(position);
+        const mouseSeek = ((event: MouseEvent) => {
+            const rect = this.element.getBoundingClientRect();
+            // TODO: consider cursor element's width
+            const x = event.clientX - rect.left;
+            const position = x / rect.width * this.duration;
+            this.seek(position);
+        }).bind(this);
+
+        this._handleMouseMove = ((event: MouseEvent) => {
+            if (this._isDragging) {
+                mouseSeek(event);
             }
-        }).bind(this));
+        }).bind(this);
+
+        const handleMouseDown = ((event: MouseEvent) => {
+            this._isDragging = true;
+            this.pause();
+            mouseSeek(event);
+        }).bind(this);
+
+        this._handleMouseUp = (() => {
+            this._isDragging = false;
+        }).bind(this);
+
+        this.element.addEventListener('mousedown', handleMouseDown);
+        window.addEventListener('mousemove', this._handleMouseMove);
+        window.addEventListener('mouseup', this._handleMouseUp);
 
         this.positionBar = document.createElement('div');
         this.positionBar.style.position = 'absolute';
@@ -83,6 +107,14 @@ export class TimelinePlayer extends Player {
         if (this._keyboardListener) {
             window.removeEventListener('keydown', this._keyboardListener);
             this._keyboardListener = null;
+        }
+        if (this._handleMouseMove) {
+            window.removeEventListener('mousemove', this._handleMouseMove);
+            this._handleMouseMove = null;
+        }
+        if (this._handleMouseUp) {
+            window.removeEventListener('mouseup', this._handleMouseUp);
+            this._handleMouseUp = null;
         }
     }
 }

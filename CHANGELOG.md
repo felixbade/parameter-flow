@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
+### Changed
+- Seeking with mouse now requires holding the mouse button down.
+- Clicking on the timeline will pause the player.
+
 ### Fixed
 - `end` event is no longer scheduled when seeking during pause.
 
