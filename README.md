@@ -7,7 +7,7 @@
 A minimalistic yet powerful parameter timeline editor and runtime for web demos.
 
 ## Key features
-- Everything is based on cubic bezier curves, making it possible to define the time derivates of parameters at control points in addition to their values. The end result looks very smooth and the runtime code is extremely small.
+- Everything is based on quintic bezier curves, making it possible to define speed and acceleration at control points in addition to values. The end result looks very smooth and the runtime code is extremely small.
 - Modifying the parameters is based on a pointer-locked mouse input, which is the best analog input widely available on desktop environments.
 - Context-sensitive parameter adjustments: for example camera panning can be made relative to its current orientation, or scaled based on how close to an SDF surface it is.
 - BPM-aware time navigation, meaning quantization that can be adjusted with hotkeys.
