@@ -31,36 +31,50 @@
         const animation = new PFAnimation({
             x: [
                 {
-                    startTime: 0,
-                    endTime: 1.5,
-                    startValue: -0.5,
-                    endValue: 0.25,
-                    endSpeed: 0,
+                    time: 0,
+                    value: -0.5,
+                },
+                {
+                    time: 1.5,
+                    value: 0.25,
+                    speed: 0,
+                },
+                {
+                    time: 6,
+                    value: 0.25,
+                    speed: 0,
+                },
+                {
+                    time: 6,
+                    value: -1.5,
+                    speed: 0,
+                },
+                {
+                    time: 9,
+                    value: -1.502,
+                    speed: 0,
                 },
             ],
             y: [
                 {
-                    startTime: 0,
-                    endTime: 10,
-                    startValue: 0.0,
-                    endValue: -0.0,
+                    time: 0,
+                    value: 0.0,
                 },
             ],
             zoomLog: [
                 {
-                    startTime: 0,
-                    endTime: 1,
-                    startValue: 0,
-                    endValue: 0,
-                    endSpeed: 0.1,
+                    time: 0,
+                    value: 0,
                 },
                 {
-                    startTime: 1,
-                    endTime: 5,
-                    startValue: 0,
-                    endValue: 10,
-                    startSpeed: 0.1,
-                    endSpeed: 0,
+                    time: 1,
+                    value: 0,
+                    speed: 0.1,
+                },
+                {
+                    time: 5,
+                    value: 10,
+                    speed: 0,
                 },
             ],
         });
