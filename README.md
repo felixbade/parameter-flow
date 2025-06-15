@@ -28,7 +28,7 @@ A minimalistic yet powerful parameter timeline editor and runtime for web demos.
 ### URL
 
 ```html
-<script src="https://cdn.jsdelivr.net/npm/parameter-flow@0.4.0/dist/main.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/parameter-flow@0.4.1/dist/main.js"></script>
 ```
 
 ```javascript
