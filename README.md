@@ -44,7 +44,7 @@ npm install parameter-flow
 import { TimelinePlayer } from 'parameter-flow'
 ```
 
-See [examples/index.html](examples/index.html) for a complete example.
+See [examples/playback.html](examples/playback.html) for a complete example.
 
 ## `Player`
 
