@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 - `Player` class now has a `duration` property
     - `currentTime` can never exceed `duration`
+    - `player` is automatically paused when it reaches the end
 
 ## [0.3.0] - 2025-06-14
 

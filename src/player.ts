@@ -21,7 +21,9 @@ export class Player extends EventTarget {
     }
 
     get paused(): boolean {
-        return this._paused;
+        // this condition is necessary because there is nothing setting
+        // `_paused` to true when the player reaches the end
+        return this._paused || this.currentTime >= this.duration;
     }
 
     play(): void {
@@ -47,7 +49,12 @@ export class Player extends EventTarget {
             throw new Error('Seek time must be a non-negative number');
         }
 
-        if (this._paused) {
+        if (this.paused) {
+            // because when the player reaches the end, it will be paused automatically
+            // in `get paused`, but nothing sets `_paused` to true.
+            // note that here we are testing against `this.paused`, not `this._paused`.
+            this._paused = true;
+
             this._currentTime = time;
         } else {
             this._startTime = Date.now() - (time * 1000);
