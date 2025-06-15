@@ -13,7 +13,7 @@ export class PFAnimation {
     }
 
     getValuesAt(time: number): Record<string, number> {
-        // note: this assumes that the segments are sorted by startTime and no overlapping time spans
+        // note: this assumes that the segments are sorted by time
         const values: Record<string, number> = {};
         for (const key in this._parameters) {
             const parameter = this._parameters[key];
