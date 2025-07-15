@@ -84,12 +84,13 @@ export class PFEditor {
                 if (currentHandler) {
                     const currentState = this.getCurrentValues();
 
-                    const modifiedState = currentHandler(currentState, {
+                    const stateDelta = currentHandler(currentState, {
                         dx: event.movementX,
                         dy: event.movementY
                     });
 
-                    for (const [key, newValue] of Object.entries(modifiedState)) {
+                    for (const [key, delta] of Object.entries(stateDelta)) {
+                        const newValue = currentState[key] + delta;
                         this.animation.addOrUpdateKeyframe(key, this.timelinePlayer.currentTime, newValue);
                     }
                 }
