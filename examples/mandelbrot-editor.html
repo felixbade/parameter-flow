@@ -42,12 +42,18 @@
                     dy *= 0.001 / zoom;
                     const cos = Math.cos(rotation);
                     const sin = Math.sin(rotation);
-                    state.x += dx * cos - dy * sin;
-                    state.y += dx * sin + dy * cos;
+                    return {
+                        ...state,
+                        x: state.x + dx * cos - dy * sin,
+                        y: state.y + dx * sin + dy * cos
+                    };
                 },
                 'zoom-rotate': (state, { dx, dy }) => {
-                    state.zoomLog += dy * 0.001;
-                    state.rotation += dx * 0.001;
+                    return {
+                        ...state,
+                        zoomLog: state.zoomLog + dy * 0.001,
+                        rotation: state.rotation + dx * 0.001
+                    };
                 },
             }
         });
@@ -111,7 +117,7 @@
                 c += u_center;
 
                 int i = 0;
-                for(int j = 0; j < 100; j++) {
+                for(int j = 0; j < 200; j++) {
                     z = vec2(z.x * z.x - z.y * z.y, 2.0 * z.x * z.y) + c;
                     if(dot(z, z) > 4.0) {
                         i = j;

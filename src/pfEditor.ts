@@ -1,7 +1,8 @@
 import { TimelinePlayer } from './timelinePlayer';
+import { PFAnimation } from './pfAnimation';
 
 interface Handler {
-    (state: Record<string, number>, ...args: any[]): void;
+    (state: Record<string, number>, ...args: any[]): Record<string, number>;
 }
 
 interface PFEditorConfig {
@@ -12,7 +13,7 @@ interface PFEditorConfig {
 }
 
 export class PFEditor {
-    private state: Record<string, number>;
+    private animation: PFAnimation;
     private handlers: PFEditorConfig['handlers'];
     private timelinePlayer: TimelinePlayer;
     private _pointerLockMoveHandler: ((event: MouseEvent) => void) | null;
@@ -21,7 +22,13 @@ export class PFEditor {
     private handlerNames: string[];
 
     constructor(config: PFEditorConfig) {
-        this.state = { ...config.variables };
+        // Initialize animation with initial keyframes at time 0
+        const initialKeyframes: Record<string, { time: number; value: number }[]> = {};
+        for (const [key, value] of Object.entries(config.variables)) {
+            initialKeyframes[key] = [{ time: 0, value }];
+        }
+        this.animation = new PFAnimation(initialKeyframes);
+
         this.handlers = config.handlers;
         this.handlerNames = Object.keys(config.handlers);
         this.currentHandlerIndex = 0;
@@ -75,10 +82,17 @@ export class PFEditor {
                 const currentHandlerName = this.handlerNames[this.currentHandlerIndex];
                 const currentHandler = this.handlers[currentHandlerName];
                 if (currentHandler) {
-                    currentHandler(this.state, {
+                    // Get current state at current time
+                    const currentState = this.animation.getValuesAt(this.timelinePlayer.currentTime);
+
+                    // Call handler with current state
+                    const newState = currentHandler(currentState, {
                         dx: event.movementX,
                         dy: event.movementY
                     });
+
+                    // Add keyframes for any modified values
+                    this._addKeyframesForModifiedValues(newState, this.timelinePlayer.currentTime);
                 }
             }
         }).bind(this);
@@ -86,8 +100,25 @@ export class PFEditor {
         document.addEventListener('mousemove', this._pointerLockMoveHandler);
     }
 
+    private _addKeyframesForModifiedValues(newState: Record<string, number>, time: number): void {
+        const currentState = this.animation.getValuesAt(time);
+
+        for (const [key, newValue] of Object.entries(newState)) {
+            const currentValue = currentState[key];
+
+            // Only add keyframe if value has changed
+            if (Math.abs(newValue - currentValue) > 1e-6) { // Small epsilon for floating point comparison
+                this._addOrUpdateKeyframe(key, time, newValue);
+            }
+        }
+    }
+
+        private _addOrUpdateKeyframe(parameter: string, time: number, value: number): void {
+        this.animation.addOrUpdateKeyframe(parameter, time, value);
+    }
+
     public getCurrentValues(): Record<string, number> {
-        return { ...this.state };
+        return this.animation.getValuesAt(this.timelinePlayer.currentTime);
     }
 
     public get currentTime(): number {
