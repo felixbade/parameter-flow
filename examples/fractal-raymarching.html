@@ -28,19 +28,9 @@
 <body>
     <canvas id="canvas"></canvas>
     <script>
-        // Stateless unit vector rotation functions
-        const normalizeVector = (x, y, z) => {
-            const length = Math.sqrt(x * x + y * y + z * z);
-            return { x: x / length, y: y / length, z: z / length };
-        };
+        const { PFEditor } = ParameterFlow;
 
-        const crossProduct = (a, b) => {
-            return {
-                x: a.y * b.z - a.z * b.y,
-                y: a.z * b.x - a.x * b.z,
-                z: a.x * b.y - a.y * b.x
-            };
-        };
+        const canvas = document.querySelector('#canvas');
 
         const rotateVectorAroundAxis = (vector, axis, angle) => {
             const cos = Math.cos(angle);
@@ -51,13 +41,8 @@
             const y = vector.y * cos + (axis.z * vector.x - axis.x * vector.z) * sin + axis.y * (axis.x * vector.x + axis.y * vector.y + axis.z * vector.z) * (1 - cos);
             const z = vector.z * cos + (axis.x * vector.y - axis.y * vector.x) * sin + axis.z * (axis.x * vector.x + axis.y * vector.y + axis.z * vector.z) * (1 - cos);
 
-            return normalizeVector(x, y, z);
+            return { x, y, z };
         };
-
-        const { PFEditor } = ParameterFlow;
-
-        // Get canvas reference early
-        const canvas = document.querySelector('#canvas');
 
         const editor = new PFEditor({
             duration: 15,
@@ -230,10 +215,6 @@
             console.log('end');
         });
 
-        // Click canvas to enable pointer lock
-        canvas.addEventListener('click', () => {
-            canvas.requestPointerLock();
-        });
         const gl = canvas.getContext('webgl');
 
         if (!gl) {
@@ -270,24 +251,24 @@
             uniform vec3 u_translate;
 
             float box(vec3 p, vec3 b) {
-              vec3 q = abs(p) - b;
-              return length(max(q, 0.0)) + min(max(q.x, max(q.y, q.z)), 0.0);
+                vec3 q = abs(p) - b;
+                return length(max(q, 0.0)) + min(max(q.x, max(q.y, q.z)), 0.0);
             }
 
             float sphere(vec3 p, float s) {
-              return length(p) - s;
+                return length(p) - s;
             }
 
             vec3 fold(vec3 p, vec3 n) {
-              return p - 2.0 * min(0.0, dot(p, n)) * n;
+                return p - 2.0 * min(0.0, dot(p, n)) * n;
             }
 
             float rand(vec2 co){
-              return fract(sin(dot(co, vec2(12.9898, 78.233))) * 43758.5453);
+                return fract(sin(dot(co, vec2(12.9898, 78.233))) * 43758.5453);
             }
 
             float random(vec4 x) {
-              return fract(rand(x.xy) + rand(x.zw));
+                return fract(rand(x.xy) + rand(x.zw));
             }
 
             vec3 color_add(vec3 a, vec3 b) {
@@ -475,9 +456,7 @@
             }
         });
 
-
-
-                const render = () => {
+        const render = () => {
             gl.useProgram(program);
 
             const values = editor.getCurrentValues();
