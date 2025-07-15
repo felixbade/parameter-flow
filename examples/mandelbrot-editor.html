@@ -43,14 +43,12 @@
                     const cos = Math.cos(rotation);
                     const sin = Math.sin(rotation);
                     return {
-                        ...state,
                         x: state.x + dx * cos - dy * sin,
                         y: state.y + dx * sin + dy * cos
                     };
                 },
                 'zoom-rotate': (state, { dx, dy }) => {
                     return {
-                        ...state,
                         zoomLog: state.zoomLog + dy * 0.001,
                         rotation: state.rotation + dx * 0.001
                     };
