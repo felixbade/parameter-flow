@@ -82,28 +82,21 @@ export class PFEditor {
                 const currentHandlerName = this.handlerNames[this.currentHandlerIndex];
                 const currentHandler = this.handlers[currentHandlerName];
                 if (currentHandler) {
-                    // Get current state at current time
-                    const currentState = this.animation.getValuesAt(this.timelinePlayer.currentTime);
+                    const currentState = this.getCurrentValues();
 
-                    // Call handler with current state
                     const modifiedState = currentHandler(currentState, {
                         dx: event.movementX,
                         dy: event.movementY
                     });
 
-                    // Add keyframes for any modified values
                     for (const [key, newValue] of Object.entries(modifiedState)) {
-                        this._addOrUpdateKeyframe(key, this.timelinePlayer.currentTime, newValue);
+                        this.animation.addOrUpdateKeyframe(key, this.timelinePlayer.currentTime, newValue);
                     }
                 }
             }
         }).bind(this);
 
         document.addEventListener('mousemove', this._pointerLockMoveHandler);
-    }
-
-    private _addOrUpdateKeyframe(parameter: string, time: number, value: number): void {
-        this.animation.addOrUpdateKeyframe(parameter, time, value);
     }
 
     public getCurrentValues(): Record<string, number> {
