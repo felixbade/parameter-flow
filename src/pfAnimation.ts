@@ -115,4 +115,25 @@ export class PFAnimation {
         }
         return values;
     }
+
+    getClosestKeyframes(parameter: string, time: number, duration: number) {
+        if (!this._parameters[parameter]) {
+            return { previous: 0, next: duration };
+        }
+
+        const keyframes = this._parameters[parameter];
+        if (keyframes.length === 0) {
+            return { previous: 0, next: duration };
+        }
+
+        const keyframesBefore = keyframes.filter((kf: ParameterKeyframe) => kf.time < time);
+        const keyframesAfter = keyframes.filter((kf: ParameterKeyframe) => kf.time > time);
+
+        const previous = keyframesBefore.length > 0 ? keyframesBefore[keyframesBefore.length - 1].time : 0;
+        const next = keyframesAfter.length > 0 ? keyframesAfter[0].time : duration;
+
+        return { previous, next };
+    }
+
+
 }

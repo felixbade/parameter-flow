@@ -62,6 +62,12 @@ export class PFEditor {
                 event.preventDefault();
                 this.currentHandlerIndex = (this.currentHandlerIndex + 1) % this.handlerNames.length;
                 console.log('Active handler:', this.handlerNames[this.currentHandlerIndex]);
+            } else if (event.code === 'ArrowLeft') {
+                event.preventDefault();
+                this.navigateToPreviousKeyframe();
+            } else if (event.code === 'ArrowRight') {
+                event.preventDefault();
+                this.navigateToNextKeyframe();
             } else if (event.code >= 'Digit1' && event.code <= 'Digit9') {
                 event.preventDefault();
                 const handlerIndex = parseInt(event.code.replace('Digit', '')) - 1;
@@ -126,5 +132,61 @@ export class PFEditor {
             this._keyboardListener = null;
         }
         this.timelinePlayer.destroy();
+    }
+
+    private getEditedParameters() {
+        if (this.handlerNames.length === 0) {
+            return [];
+        }
+
+        const currentHandlerName = this.handlerNames[this.currentHandlerIndex];
+        const currentHandler = this.handlers[currentHandlerName];
+        if (!currentHandler) {
+            return [];
+        }
+
+        const stateDelta = currentHandler(this.getCurrentValues(), { dx: 0, dy: 0 });
+
+        return Object.keys(stateDelta);
+    }
+
+    private navigateToPreviousKeyframe() {
+        const editedParameters = this.getEditedParameters();
+        if (editedParameters.length === 0) {
+            this.timelinePlayer.seek(0);
+            return;
+        }
+
+        let closestPreviousTime = 0;
+
+        // find the closest previous keyframe across all edited parameters
+        for (const parameter of editedParameters) {
+            const keyframes = this.animation.getClosestKeyframes(parameter, this.timelinePlayer.currentTime, this.timelinePlayer.duration);
+            if (keyframes.previous > closestPreviousTime) {
+                closestPreviousTime = keyframes.previous;
+            }
+        }
+
+        this.timelinePlayer.seek(closestPreviousTime);
+    }
+
+    private navigateToNextKeyframe() {
+        const editedParameters = this.getEditedParameters();
+        if (editedParameters.length === 0) {
+            this.timelinePlayer.seek(this.timelinePlayer.duration);
+            return;
+        }
+
+        let closestNextTime = this.timelinePlayer.duration;
+
+        // find the closest next keyframe across all edited parameters
+        for (const parameter of editedParameters) {
+            const keyframes = this.animation.getClosestKeyframes(parameter, this.timelinePlayer.currentTime, this.timelinePlayer.duration);
+            if (keyframes.next < closestNextTime) {
+                closestNextTime = keyframes.next;
+            }
+        }
+
+        this.timelinePlayer.seek(closestNextTime);
     }
 }
