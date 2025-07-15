@@ -55,6 +55,13 @@ export class PFEditor {
                 event.preventDefault();
                 this.currentHandlerIndex = (this.currentHandlerIndex + 1) % this.handlerNames.length;
                 console.log('Active handler:', this.handlerNames[this.currentHandlerIndex]);
+            } else if (event.code >= 'Digit1' && event.code <= 'Digit9') {
+                event.preventDefault();
+                const handlerIndex = parseInt(event.code.replace('Digit', '')) - 1;
+                if (handlerIndex < this.handlerNames.length) {
+                    this.currentHandlerIndex = handlerIndex;
+                    console.log('Active handler:', this.handlerNames[this.currentHandlerIndex]);
+                }
             }
         }).bind(this);
 
