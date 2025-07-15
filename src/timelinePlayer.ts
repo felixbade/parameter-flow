@@ -14,6 +14,7 @@ export class TimelinePlayer extends Player {
     private _handleMouseMove: ((event: MouseEvent) => void) | null;
     private _handleMouseUp: (() => void) | null;
     private _isDragging: boolean;
+    private _pointerLockMoveHandler: ((event: MouseEvent) => void) | null;
 
     constructor(config: TimelinePlayerConfig = { duration: 10 }) {
         super(config);
@@ -22,10 +23,13 @@ export class TimelinePlayer extends Player {
         this._handleMouseMove = null;
         this._handleMouseUp = null;
         this._isDragging = false;
+        this._pointerLockMoveHandler = null;
 
         if (config.keyboardListener !== false) {
             this._setupKeyboardListener();
         }
+
+        this._setupPointerLockListener();
 
         this.element = document.createElement('div');
         this.element.style.position = 'absolute';
@@ -99,11 +103,28 @@ export class TimelinePlayer extends Player {
             } else if (event.code === 'Digit0') {
                 this.pause();
                 this.seek(0);
+            } else if (event.code === 'Enter') {
+                event.preventDefault();
+                if (document.pointerLockElement) {
+                    document.exitPointerLock();
+                } else {
+                    document.body.requestPointerLock();
+                }
             }
         }).bind(this);
 
         window.addEventListener('keydown', handleKeyPress);
         this._keyboardListener = handleKeyPress;
+    }
+
+    private _setupPointerLockListener(): void {
+        this._pointerLockMoveHandler = ((event: MouseEvent) => {
+            if (document.pointerLockElement) {
+                console.log('Mouse delta:', { x: event.movementX, y: event.movementY });
+            }
+        }).bind(this);
+
+        document.addEventListener('mousemove', this._pointerLockMoveHandler);
     }
 
     public destroy(): void {
@@ -118,6 +139,10 @@ export class TimelinePlayer extends Player {
         if (this._handleMouseUp) {
             window.removeEventListener('mouseup', this._handleMouseUp);
             this._handleMouseUp = null;
+        }
+        if (this._pointerLockMoveHandler) {
+            document.removeEventListener('mousemove', this._pointerLockMoveHandler);
+            this._pointerLockMoveHandler = null;
         }
     }
 }
