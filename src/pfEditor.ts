@@ -75,6 +75,9 @@ export class PFEditor {
                     this.currentHandlerIndex = handlerIndex;
                     console.log('Active handler:', this.handlerNames[this.currentHandlerIndex]);
                 }
+            } else if (event.code === 'KeyE') {
+                event.preventDefault();
+                this.exportAnimation();
             }
         }).bind(this);
 
@@ -188,5 +191,21 @@ export class PFEditor {
         }
 
         this.timelinePlayer.seek(closestNextTime);
+    }
+
+    private exportAnimation(): void {
+        const animationData = {
+            duration: this.timelinePlayer.duration,
+            parameters: this.animation.parameters,
+        };
+        const dataStr = JSON.stringify(animationData, null, 2);
+        const dataBlob = new Blob([dataStr], { type: 'application/json' });
+
+        const link = document.createElement('a');
+        link.href = URL.createObjectURL(dataBlob);
+        link.download = `animation-${Date.now()}.json`;
+        link.click();
+
+        URL.revokeObjectURL(link.href);
     }
 }
