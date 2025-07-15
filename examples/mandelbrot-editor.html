@@ -12,6 +12,8 @@
             width: 100vw;
             height: 100vh;
             display: block;
+            image-rendering: crisp-edges;
+            image-rendering: pixelated;
         }
 
         body {
@@ -218,7 +220,7 @@
         const expLocation = gl.getUniformLocation(program, 'u_exp');
 
         const resizeCanvas = () => {
-            const dpr = window.devicePixelRatio;
+            const dpr = 1;//window.devicePixelRatio;
             canvas.width = window.innerWidth * dpr;
             canvas.height = window.innerHeight * dpr;
             gl.viewport(0, 0, canvas.width, canvas.height);
