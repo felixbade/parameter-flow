@@ -18,18 +18,12 @@ export class PFAnimation {
         }
 
         const keyframes = this._parameters[parameter];
-
-        // Check if there's already a keyframe at this time
         const existingKeyframeIndex = keyframes.findIndex((kf: ParameterKeyframe) => Math.abs(kf.time - time) < 1e-6);
 
         if (existingKeyframeIndex !== -1) {
-            // Update existing keyframe
             keyframes[existingKeyframeIndex].value = value;
         } else {
-            // Add new keyframe
             keyframes.push({ time, value });
-
-            // Sort keyframes by time to maintain order
             keyframes.sort((a: ParameterKeyframe, b: ParameterKeyframe) => a.time - b.time);
         }
     }
