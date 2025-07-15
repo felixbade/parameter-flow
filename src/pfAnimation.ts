@@ -14,7 +14,7 @@ export class PFAnimation {
 
     addOrUpdateKeyframe(parameter: string, time: number, value: number): void {
         if (!this._parameters[parameter]) {
-            this._parameters[parameter] = [];
+            throw new Error(`Parameter ${parameter} not found`);
         }
 
         const keyframes = this._parameters[parameter];
