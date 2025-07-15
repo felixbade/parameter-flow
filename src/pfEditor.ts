@@ -212,7 +212,15 @@ export class PFEditor {
 
         const link = document.createElement('a');
         link.href = URL.createObjectURL(dataBlob);
-        link.download = `animation-${Date.now()}.json`;
+        const now = new Date();
+        const year = now.getFullYear();
+        const month = String(now.getMonth() + 1).padStart(2, '0');
+        const day = String(now.getDate()).padStart(2, '0');
+        const hour = String(now.getHours()).padStart(2, '0');
+        const minute = String(now.getMinutes()).padStart(2, '0');
+        const second = String(now.getSeconds()).padStart(2, '0');
+        // format: animation_2025-07-15_12-34-56.json
+        link.download = `animation_${year}-${month}-${day}_${hour}-${minute}-${second}.json`;
         link.click();
 
         URL.revokeObjectURL(link.href);
