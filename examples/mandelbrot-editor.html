@@ -33,6 +33,10 @@
                 y: 0,
                 zoomLog: 0,
                 rotation: 0,
+                z0x: 0,
+                z0y: 0,
+                expx: 2,
+                expy: 0,
             },
             handlers: {
                 'pan': (state, { dx, dy }) => {
@@ -51,6 +55,28 @@
                     return {
                         zoomLog: dy * 0.001,
                         rotation: dx * 0.001
+                    };
+                },
+                'z0-modify': (state, { dx, dy }) => {
+                    const zoom = Math.pow(2, state.zoomLog);
+                    dx *= 0.001 / zoom;
+                    dy *= -0.001 / zoom;
+                    const cos = Math.cos(state.rotation);
+                    const sin = Math.sin(state.rotation);
+                    return {
+                        z0x: dx * cos - dy * sin,
+                        z0y: dx * sin + dy * cos
+                    };
+                },
+                'exp-modify': (state, { dx, dy }) => {
+                    const zoom = Math.pow(2, state.zoomLog);
+                    dx *= 0.001 / zoom;
+                    dy *= -0.001 / zoom;
+                    const cos = Math.cos(state.rotation);
+                    const sin = Math.sin(state.rotation);
+                    return {
+                        expx: dx * cos - dy * sin,
+                        expy: dx * sin + dy * cos
                     };
                 },
             }
@@ -94,6 +120,8 @@
             uniform float u_rotation;
             uniform vec2 u_resolution;
             uniform float u_time;
+            uniform vec2 u_z0;
+            uniform vec2 u_exp;
 
             vec3 hsv2rgb(vec3 c) {
                 vec4 K = vec4(1.0, 2.0 / 3.0, 1.0 / 3.0, 3.0);
@@ -102,21 +130,33 @@
             }
 
             void main() {
-                vec2 z = vec2(0.0, 0.0);
+                vec2 z = u_z0;
 
                 vec2 uv = gl_FragCoord.xy - u_resolution * 0.5;
                 uv *= 2.0 / u_resolution.y;
                 vec2 c = uv / u_zoom;
 
-                float cos = cos(u_rotation);
-                float sin = sin(u_rotation);
-                c = vec2(c.x * cos - c.y * sin, c.x * sin + c.y * cos);
+                float cos_rot = cos(u_rotation);
+                float sin_rot = sin(u_rotation);
+                c = vec2(c.x * cos_rot - c.y * sin_rot, c.x * sin_rot + c.y * cos_rot);
 
                 c += u_center;
 
                 int i = 0;
                 for(int j = 0; j < 200; j++) {
-                    z = vec2(z.x * z.x - z.y * z.y, 2.0 * z.x * z.y) + c;
+                    // Complex power: z^exp where exp is a complex number
+                    float r = length(z);
+
+                    // Handle the case when z is at origin (0,0)
+                    if(r < 1e-10) {
+                        z = c;
+                    } else {
+                        float theta = atan(z.y, z.x);
+                        float new_r = pow(r, u_exp.x) * exp(-u_exp.y * theta);
+                        float new_theta = u_exp.x * theta + u_exp.y * log(r);
+                        z = vec2(new_r * cos(new_theta), new_r * sin(new_theta)) + c;
+                    }
+
                     if(dot(z, z) > 4.0) {
                         i = j;
                         break;
@@ -174,6 +214,8 @@
         const rotationLocation = gl.getUniformLocation(program, 'u_rotation');
         const resolutionLocation = gl.getUniformLocation(program, 'u_resolution');
         const timeLocation = gl.getUniformLocation(program, 'u_time');
+        const z0Location = gl.getUniformLocation(program, 'u_z0');
+        const expLocation = gl.getUniformLocation(program, 'u_exp');
 
         const resizeCanvas = () => {
             const dpr = window.devicePixelRatio;
@@ -198,7 +240,7 @@
         const render = () => {
             gl.useProgram(program);
 
-            const { x, y, zoomLog, rotation } = editor.getCurrentValues();
+            const { x, y, zoomLog, rotation, z0x, z0y, expx, expy } = editor.getCurrentValues();
             const zoom = Math.pow(2, zoomLog);
 
             // Set uniforms
@@ -207,6 +249,8 @@
             gl.uniform1f(rotationLocation, rotation); // Rotation
             gl.uniform2f(resolutionLocation, canvas.width, canvas.height); // Resolution
             gl.uniform1f(timeLocation, editor.currentTime); // Time for animation
+            gl.uniform2f(z0Location, z0x, z0y); // Initial z value
+            gl.uniform2f(expLocation, expx, expy); // Complex exponent
 
             // Set up position attribute
             gl.enableVertexAttribArray(positionLocation);
