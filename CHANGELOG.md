@@ -9,6 +9,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 - `PFAnimation` class that does quintic bezier interpolation between keyframes.
+- `PFEditor` class that allows editing keyframes.
+- Custom handlers for editing parameters.
+- Export and import.
 
 ### Changed
 - Renamed `examples/index.html` to `examples/playback.html`.
