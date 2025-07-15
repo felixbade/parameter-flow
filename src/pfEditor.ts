@@ -77,7 +77,16 @@ export class PFEditor {
                 }
             } else if (event.code === 'KeyE') {
                 event.preventDefault();
+                if (document.pointerLockElement) {
+                    document.exitPointerLock();
+                }
                 this.exportAnimation();
+            } else if (event.code === 'KeyI') {
+                event.preventDefault();
+                if (document.pointerLockElement) {
+                    document.exitPointerLock();
+                }
+                this.importAnimation();
             }
         }).bind(this);
 
@@ -207,5 +216,36 @@ export class PFEditor {
         link.click();
 
         URL.revokeObjectURL(link.href);
+    }
+
+    private importAnimation(): void {
+        const input = document.createElement('input');
+        input.type = 'file';
+        input.accept = '.json';
+        input.onchange = (event) => {
+            const file = (event.target as HTMLInputElement).files?.[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    try {
+                        const animationData = JSON.parse(e.target?.result as string);
+                        this.loadAnimationData(animationData);
+                    } catch (error) {
+                        console.error('Failed to parse animation file:', error);
+                    }
+                };
+                reader.readAsText(file);
+            }
+        };
+        input.click();
+    }
+
+    private loadAnimationData(animationData: any): void {
+        if (animationData.parameters) {
+            this.animation = new PFAnimation(animationData.parameters);
+            this.timelinePlayer.seek(0);
+        } else {
+            console.error('Invalid animation file format');
+        }
     }
 }
