@@ -1,0 +1,568 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- replace the appropriate script URL to parameter flow's main.js -->
+    <script src="../dist/main.js"></script>
+    <!-- <script src="https://cdn.jsdelivr.net/npm/parameter-flow@0.4.1/dist/main.js"></script> -->
+    <style>
+        canvas {
+            display: block;
+            margin: 0 auto;
+        }
+
+        body {
+            margin: 0;
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background: #000;
+        }
+    </style>
+</head>
+
+<body>
+    <canvas id="canvas"></canvas>
+    <script>
+                // UnitVectorParameter class for proper vector rotation
+        class UnitVectorParameter {
+            constructor(x, y, z) {
+                // normalize
+                const length = Math.sqrt(x * x + y * y + z * z);
+                x /= length;
+                y /= length;
+                z /= length;
+                this.value = { x, y, z };
+
+                // generate a vector that is perpendicular to value
+                const randomUnitVector = () => {
+                    const a = Math.random() * 2 * Math.PI;
+                    const z = Math.random() * 2 - 1;
+                    const r = Math.sqrt(1 - z * z);
+                    const x = r * Math.cos(a);
+                    const y = r * Math.sin(a);
+                    return { x, y, z };
+                }
+
+                const cross = (a, b) => {
+                    return {
+                        x: a.y * b.z - a.z * b.y,
+                        y: a.z * b.x - a.x * b.z,
+                        z: a.x * b.y - a.y * b.x
+                    }
+                }
+
+                while (true) {
+                    const randomVector = randomUnitVector();
+                    const crossProduct = cross(this.value, randomVector);
+                    if (crossProduct.x !== 0 || crossProduct.y !== 0 || crossProduct.z !== 0) {
+                        this.perpendicularA = crossProduct;
+                        break;
+                    }
+                }
+
+                this.perpendicularB = cross(this.value, this.perpendicularA);
+            }
+
+            rotateA(angle) {
+                // rotate value and perpendicularB around perpendicularA
+                const cos = Math.cos(angle);
+                const sin = Math.sin(angle);
+                const x = this.value.x * cos + this.perpendicularB.x * sin;
+                const y = this.value.y * cos + this.perpendicularB.y * sin;
+                const z = this.value.z * cos + this.perpendicularB.z * sin;
+                this.perpendicularB.x = -this.value.x * sin + this.perpendicularB.x * cos;
+                this.perpendicularB.y = -this.value.y * sin + this.perpendicularB.y * cos;
+                this.perpendicularB.z = -this.value.z * sin + this.perpendicularB.z * cos;
+                this.value.x = x;
+                this.value.y = y;
+                this.value.z = z;
+
+                // make sure that all components are unit vectors again
+                const Ar = Math.sqrt(this.perpendicularA.x * this.perpendicularA.x + this.perpendicularA.y * this.perpendicularA.y + this.perpendicularA.z * this.perpendicularA.z);
+                this.perpendicularA.x /= Ar;
+                this.perpendicularA.y /= Ar;
+                this.perpendicularA.z /= Ar;
+
+                const Br = Math.sqrt(this.perpendicularB.x * this.perpendicularB.x + this.perpendicularB.y * this.perpendicularB.y + this.perpendicularB.z * this.perpendicularB.z);
+                this.perpendicularB.x /= Br;
+                this.perpendicularB.y /= Br;
+                this.perpendicularB.z /= Br;
+
+                const Vr = Math.sqrt(this.value.x * this.value.x + this.value.y * this.value.y + this.value.z * this.value.z);
+                this.value.x /= Vr;
+                this.value.y /= Vr;
+                this.value.z /= Vr;
+            }
+
+            rotateB(angle) {
+                // rotate value and perpendicularA around perpendicularB
+                const cos = Math.cos(angle);
+                const sin = Math.sin(angle);
+                const x = this.value.x * cos + this.perpendicularA.x * sin;
+                const y = this.value.y * cos + this.perpendicularA.y * sin;
+                const z = this.value.z * cos + this.perpendicularA.z * sin;
+                this.perpendicularA.x = -this.value.x * sin + this.perpendicularA.x * cos;
+                this.perpendicularA.y = -this.value.y * sin + this.perpendicularA.y * cos;
+                this.perpendicularA.z = -this.value.z * sin + this.perpendicularA.z * cos;
+                this.value.x = x;
+                this.value.y = y;
+                this.value.z = z;
+
+                // make sure that all components are unit vectors again
+                const Ar = Math.sqrt(this.perpendicularA.x * this.perpendicularA.x + this.perpendicularA.y * this.perpendicularA.y + this.perpendicularA.z * this.perpendicularA.z);
+                this.perpendicularA.x /= Ar;
+                this.perpendicularA.y /= Ar;
+                this.perpendicularA.z /= Ar;
+
+                const Br = Math.sqrt(this.perpendicularB.x * this.perpendicularB.x + this.perpendicularB.y * this.perpendicularB.y + this.perpendicularB.z * this.perpendicularB.z);
+                this.perpendicularB.x /= Br;
+                this.perpendicularB.y /= Br;
+                this.perpendicularB.z /= Br;
+
+                const Vr = Math.sqrt(this.value.x * this.value.x + this.value.y * this.value.y + this.value.z * this.value.z);
+                this.value.x /= Vr;
+                this.value.y /= Vr;
+                this.value.z /= Vr;
+            }
+
+            get x() {
+                return this.value.x;
+            }
+
+            get y() {
+                return this.value.y;
+            }
+
+            get z() {
+                return this.value.z;
+            }
+        }
+
+        // Create unit vector parameters
+        const lightDirection = new UnitVectorParameter(0, 1, -1);
+        const foldADirection = new UnitVectorParameter(1, 1, 0);
+        const foldBDirection = new UnitVectorParameter(0, 1, 1);
+
+        const { PFEditor } = ParameterFlow;
+
+        // Get canvas reference early
+        const canvas = document.querySelector('#canvas');
+
+        const editor = new PFEditor({
+            duration: 15,
+            variables: {
+                cameraX: 0,
+                cameraY: 0,
+                cameraZ: -4.0,
+                cameraYaw: 0,
+                cameraPitch: 0,
+                cameraZoom: 1.0,
+                lightX: lightDirection.x,
+                lightY: lightDirection.y,
+                lightZ: lightDirection.z,
+                foldAX: foldADirection.x,
+                foldAY: foldADirection.y,
+                foldAZ: foldADirection.z,
+                foldBX: foldBDirection.x,
+                foldBY: foldBDirection.y,
+                foldBZ: foldBDirection.z,
+                translateX: -10.0,
+                translateY: 3.0,
+                translateZ: 0.0,
+            },
+            handlers: {
+                'cameraDirection': (state, { dx, dy }) => {
+                    return {
+                        cameraYaw: -dx / 500,
+                        cameraPitch: -dy / 500
+                    };
+                },
+                'cameraXY': (state, { dx, dy }) => {
+                    const cosYaw = Math.cos(state.cameraYaw);
+                    const sinYaw = Math.sin(state.cameraYaw);
+                    const cosPitch = Math.cos(state.cameraPitch);
+                    const sinPitch = Math.sin(state.cameraPitch);
+
+                    return {
+                        cameraX: -dx / 300 * cosYaw + dy / 300 * sinPitch * sinYaw,
+                        cameraY: -dy / 300 * cosPitch,
+                        cameraZ: dx / 300 * sinYaw + dy / 300 * sinPitch * cosYaw
+                    };
+                },
+                'cameraZZoom': (state, { dx, dy }) => {
+                    const cosYaw = Math.cos(state.cameraYaw);
+                    const sinYaw = Math.sin(state.cameraYaw);
+                    const cosPitch = Math.cos(state.cameraPitch);
+                    const sinPitch = Math.sin(state.cameraPitch);
+
+                    const cameraDirX = sinYaw * cosPitch;
+                    const cameraDirY = sinPitch;
+                    const cameraDirZ = cosYaw * cosPitch;
+
+                    return {
+                        cameraX: -dy / 300 * cameraDirX,
+                        cameraY: -dy / 300 * cameraDirY,
+                        cameraZ: -dy / 300 * cameraDirZ,
+                        cameraZoom: (Math.exp(dx / 1000) - 1) * state.cameraZoom
+                    };
+                },
+                'lightDirection': (state, { dx, dy }) => {
+                    lightDirection.rotateA(-dy / 300);
+                    lightDirection.rotateB(dx / 300);
+                    return {
+                        lightX: lightDirection.x - state.lightX,
+                        lightY: lightDirection.y - state.lightY,
+                        lightZ: lightDirection.z - state.lightZ
+                    };
+                },
+                'foldADirection': (state, { dx, dy }) => {
+                    foldADirection.rotateA(-dy / 1000);
+                    foldADirection.rotateB(dx / 1000);
+                    return {
+                        foldAX: foldADirection.x - state.foldAX,
+                        foldAY: foldADirection.y - state.foldAY,
+                        foldAZ: foldADirection.z - state.foldAZ
+                    };
+                },
+                'foldBDirection': (state, { dx, dy }) => {
+                    foldBDirection.rotateA(-dy / 1000);
+                    foldBDirection.rotateB(dx / 1000);
+                    return {
+                        foldBX: foldBDirection.x - state.foldBX,
+                        foldBY: foldBDirection.y - state.foldBY,
+                        foldBZ: foldBDirection.z - state.foldBZ
+                    };
+                },
+                'translateXY': (state, { dx, dy }) => {
+                    return {
+                        translateX: -dx / 100,
+                        translateY: dy / 100
+                    };
+                },
+                'translateXZ': (state, { dx, dy }) => {
+                    return {
+                        translateX: -dx / 100,
+                        translateZ: dy / 100
+                    };
+                }
+            }
+        });
+
+        document.body.appendChild(editor.element);
+
+        editor.addEventListener('play', () => {
+            console.log('play');
+        });
+
+        editor.addEventListener('pause', () => {
+            console.log('pause');
+        });
+
+        editor.addEventListener('end', () => {
+            console.log('end');
+        });
+
+        // Click canvas to enable pointer lock
+        canvas.addEventListener('click', () => {
+            canvas.requestPointerLock();
+        });
+        const gl = canvas.getContext('webgl');
+
+        if (!gl) {
+            alert('WebGL not supported');
+            throw new Error('WebGL not supported');
+        }
+
+        // Vertex shader
+        const vertexShaderSource = `
+            attribute vec4 a_position;
+            void main() {
+                gl_Position = a_position;
+            }
+        `;
+
+        // Fragment shader for 3D fractal raymarching
+        const fragmentShaderSource = `
+            precision lowp float;
+
+            #define TAU 6.2831853
+            #define MAX_STEPS 1000
+            #define MAX_DIST 100.0
+            #define SURF_DIST 1e-4
+            #define ITERATIONS 15
+
+            uniform vec2 u_resolution;
+            uniform float u_time;
+            uniform vec3 u_camera_pos;
+            uniform vec3 u_camera_dir;
+            uniform float u_camera_zoom;
+            uniform vec3 u_light_dir;
+            uniform vec3 u_fold_a;
+            uniform vec3 u_fold_b;
+            uniform vec3 u_translate;
+
+            float box(vec3 p, vec3 b) {
+              vec3 q = abs(p) - b;
+              return length(max(q, 0.0)) + min(max(q.x, max(q.y, q.z)), 0.0);
+            }
+
+            float sphere(vec3 p, float s) {
+              return length(p) - s;
+            }
+
+            vec3 fold(vec3 p, vec3 n) {
+              return p - 2.0 * min(0.0, dot(p, n)) * n;
+            }
+
+            float rand(vec2 co){
+              return fract(sin(dot(co, vec2(12.9898, 78.233))) * 43758.5453);
+            }
+
+            float random(vec4 x) {
+              return fract(rand(x.xy) + rand(x.zw));
+            }
+
+            vec3 color_add(vec3 a, vec3 b) {
+                return vec3(1.0) - (vec3(1.0) - a) * (vec3(1.0) - b);
+            }
+
+            vec3 color_blend(vec3 a, vec3 b) {
+                vec3 a_norm = a / (vec3(1.0) - a);
+                vec3 b_norm = b / (vec3(1.0) - b);
+                vec3 c = pow(a_norm * b_norm, vec3(0.5));
+                return c / (vec3(1.0) + c);
+            }
+
+            float DE(vec3 point) {
+                float scale = 2.0;
+                vec3 a = u_fold_a;
+                vec3 b = u_fold_b;
+                vec3 o = u_translate;
+
+                for (int i = 0; i < ITERATIONS; i++) {
+                    point -= 2.0 * min(0.0, dot(point, a)) * a;
+                    point -= 2.0 * min(0.0, dot(point, b)) * b;
+                    point *= scale;
+                    point = point.zxy;
+                    point += o;
+                }
+                return box(point * pow(scale, -float(ITERATIONS)), vec3(0.1, 0.2, 2.0));
+            }
+
+            vec3 normal(vec3 point) {
+                vec2 e = vec2(1e-4, 0.0);
+                float o = DE(point);
+                float dx = DE(point + e.xyy) - DE(point - e.xyy);
+                float dy = DE(point + e.yxy) - DE(point - e.yxy);
+                float dz = DE(point + e.yyx) - DE(point - e.yyx);
+                return normalize(vec3(dx, dy, dz));
+            }
+
+            vec3 shadow_raymarch(vec3 origin, vec3 direction) {
+                float travel = 0.0;
+                for (int i = 0; i < MAX_STEPS; i++) {
+                    vec3 pos = origin + travel * direction;
+                    float distance = DE(pos);
+                    if (distance < SURF_DIST) {
+                        return vec3(0.0);
+                    }
+                    travel += distance;
+                    if (travel > MAX_DIST) {
+                        return log(float(i)) / log(float(MAX_STEPS)) * vec3(1.0);
+                    }
+                }
+                return vec3(1.0);
+            }
+
+            vec3 raymarch(vec3 origin, vec3 direction) {
+                float travel = 0.0;
+                for (int i = 0; i < MAX_STEPS; i++) {
+                    vec3 pos = origin + travel * direction;
+                    float distance = DE(pos);
+                    if (distance < SURF_DIST) {
+                        float fakeAO = 1.0 - log(float(i)) / log(float(MAX_STEPS));
+                        vec3 fakeAO_light = vec3(fakeAO);
+                        vec3 n = normal(pos);
+                        vec3 light = u_light_dir;
+
+                        float directional = max(0.0, dot(n, light));
+                        vec3 directional_light = vec3(10.0, 2.5, 0.5) * directional;
+
+                        vec3 ambient = vec3(2.5, 6.0, 10.0) * 0.04;
+
+                        vec3 shadow = shadow_raymarch(pos + n * SURF_DIST * 2.0, light);
+                        directional_light *= shadow;
+
+                        return fakeAO_light * (directional_light * 2.0 + ambient);
+                    }
+                    travel += distance;
+                    if (travel > MAX_DIST) {
+                        break;
+                    }
+                }
+                return vec3(0.0);
+            }
+
+            void main() {
+                vec2 uv = gl_FragCoord.xy / u_resolution;
+                vec2 p = (gl_FragCoord.xy - 0.5 * u_resolution) / u_resolution.y;
+
+                vec3 camera_pos = u_camera_pos;
+                vec3 camera_dir = u_camera_dir;
+                vec3 camera_up = vec3(0.0, 1.0, 0.0);
+                vec3 camera_right = normalize(cross(camera_dir, camera_up));
+                camera_up = normalize(cross(camera_right, camera_dir));
+
+                vec3 ray_dir = normalize(u_camera_zoom * camera_dir + p.x * camera_right + p.y * camera_up);
+
+                vec3 exposure = raymarch(camera_pos, ray_dir);
+
+                vec3 color = exposure / (vec3(1.0) + exposure);
+
+                gl_FragColor = vec4(color, 1.0);
+            }
+        `;
+
+        // Create shaders
+        const createShader = (gl, type, source) => {
+            const shader = gl.createShader(type);
+            gl.shaderSource(shader, source);
+            gl.compileShader(shader);
+
+            if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
+                console.error('Shader compile error:', gl.getShaderInfoLog(shader));
+                gl.deleteShader(shader);
+                return null;
+            }
+            return shader;
+        };
+
+        const vertexShader = createShader(gl, gl.VERTEX_SHADER, vertexShaderSource);
+        const fragmentShader = createShader(gl, gl.FRAGMENT_SHADER, fragmentShaderSource);
+
+        // Create program
+        const program = gl.createProgram();
+        gl.attachShader(program, vertexShader);
+        gl.attachShader(program, fragmentShader);
+        gl.linkProgram(program);
+
+        if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
+            console.error('Program link error:', gl.getProgramInfoLog(program));
+            throw new Error('Program link error');
+        }
+
+        // Create buffer
+        const positionBuffer = gl.createBuffer();
+        gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
+        gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([
+            -1, -1,
+            1, -1,
+            -1, 1,
+            1, 1,
+        ]), gl.STATIC_DRAW);
+
+        // Get attribute and uniform locations
+        const positionLocation = gl.getAttribLocation(program, 'a_position');
+        const resolutionLocation = gl.getUniformLocation(program, 'u_resolution');
+        const timeLocation = gl.getUniformLocation(program, 'u_time');
+        const cameraPosLocation = gl.getUniformLocation(program, 'u_camera_pos');
+        const cameraDirLocation = gl.getUniformLocation(program, 'u_camera_dir');
+        const cameraZoomLocation = gl.getUniformLocation(program, 'u_camera_zoom');
+        const lightDirLocation = gl.getUniformLocation(program, 'u_light_dir');
+        const foldALocation = gl.getUniformLocation(program, 'u_fold_a');
+        const foldBLocation = gl.getUniformLocation(program, 'u_fold_b');
+        const translateLocation = gl.getUniformLocation(program, 'u_translate');
+
+        const resizeCanvas = () => {
+            // Set to 720p resolution
+            canvas.width = 1280;
+            canvas.height = 720;
+            gl.viewport(0, 0, canvas.width, canvas.height);
+
+            // Scale canvas to fit window while maintaining aspect ratio
+            const canvasAspectRatio = 1280 / 720;
+            const windowAspectRatio = window.innerWidth / window.innerHeight;
+
+            if (windowAspectRatio > canvasAspectRatio) {
+                // Window is wider than canvas
+                canvas.style.width = window.innerHeight * canvasAspectRatio + 'px';
+                canvas.style.height = window.innerHeight + 'px';
+            } else {
+                // Window is taller than canvas
+                canvas.style.width = window.innerWidth + 'px';
+                canvas.style.height = window.innerWidth / canvasAspectRatio + 'px';
+            }
+        };
+        resizeCanvas();
+        window.addEventListener('resize', resizeCanvas);
+
+        document.addEventListener('keydown', (event) => {
+            if (event.key === 'f' || event.key === 'F') {
+                event.preventDefault();
+                if (!document.fullscreenElement) {
+                    document.documentElement.requestFullscreen()
+                } else {
+                    document.exitFullscreen()
+                }
+            }
+        });
+
+
+
+                const render = () => {
+            gl.useProgram(program);
+
+            const values = editor.getCurrentValues();
+
+            // Calculate camera direction from yaw and pitch
+            const cosYaw = Math.cos(values.cameraYaw);
+            const sinYaw = Math.sin(values.cameraYaw);
+            const cosPitch = Math.cos(values.cameraPitch);
+            const sinPitch = Math.sin(values.cameraPitch);
+
+            const cameraDirX = sinYaw * cosPitch;
+            const cameraDirY = sinPitch;
+            const cameraDirZ = cosYaw * cosPitch;
+
+            // Use UnitVectorParameter values directly (they're already normalized)
+            const lightX = lightDirection.x;
+            const lightY = lightDirection.y;
+            const lightZ = lightDirection.z;
+            const foldAX = foldADirection.x;
+            const foldAY = foldADirection.y;
+            const foldAZ = foldADirection.z;
+            const foldBX = foldBDirection.x;
+            const foldBY = foldBDirection.y;
+            const foldBZ = foldBDirection.z;
+
+            // Set uniforms
+            gl.uniform2f(resolutionLocation, canvas.width, canvas.height);
+            gl.uniform1f(timeLocation, editor.currentTime);
+            gl.uniform3f(cameraPosLocation, values.cameraX, values.cameraY, values.cameraZ);
+            gl.uniform3f(cameraDirLocation, cameraDirX, cameraDirY, cameraDirZ);
+            gl.uniform1f(cameraZoomLocation, values.cameraZoom);
+            gl.uniform3f(lightDirLocation, lightX, lightY, lightZ);
+            gl.uniform3f(foldALocation, foldAX, foldAY, foldAZ);
+            gl.uniform3f(foldBLocation, foldBX, foldBY, foldBZ);
+            gl.uniform3f(translateLocation, values.translateX, values.translateY, values.translateZ);
+
+            // Set up position attribute
+            gl.enableVertexAttribArray(positionLocation);
+            gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
+            gl.vertexAttribPointer(positionLocation, 2, gl.FLOAT, false, 0, 0);
+
+            // Draw
+            gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+
+            requestAnimationFrame(render);
+        };
+        render();
+    </script>
+</body>
+
+</html>
