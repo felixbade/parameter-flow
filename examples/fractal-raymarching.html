@@ -28,125 +28,31 @@
 <body>
     <canvas id="canvas"></canvas>
     <script>
-                // UnitVectorParameter class for proper vector rotation
-        class UnitVectorParameter {
-            constructor(x, y, z) {
-                // normalize
-                const length = Math.sqrt(x * x + y * y + z * z);
-                x /= length;
-                y /= length;
-                z /= length;
-                this.value = { x, y, z };
+        // Stateless unit vector rotation functions
+        const normalizeVector = (x, y, z) => {
+            const length = Math.sqrt(x * x + y * y + z * z);
+            return { x: x / length, y: y / length, z: z / length };
+        };
 
-                // generate a vector that is perpendicular to value
-                const randomUnitVector = () => {
-                    const a = Math.random() * 2 * Math.PI;
-                    const z = Math.random() * 2 - 1;
-                    const r = Math.sqrt(1 - z * z);
-                    const x = r * Math.cos(a);
-                    const y = r * Math.sin(a);
-                    return { x, y, z };
-                }
+        const crossProduct = (a, b) => {
+            return {
+                x: a.y * b.z - a.z * b.y,
+                y: a.z * b.x - a.x * b.z,
+                z: a.x * b.y - a.y * b.x
+            };
+        };
 
-                const cross = (a, b) => {
-                    return {
-                        x: a.y * b.z - a.z * b.y,
-                        y: a.z * b.x - a.x * b.z,
-                        z: a.x * b.y - a.y * b.x
-                    }
-                }
+        const rotateVectorAroundAxis = (vector, axis, angle) => {
+            const cos = Math.cos(angle);
+            const sin = Math.sin(angle);
 
-                while (true) {
-                    const randomVector = randomUnitVector();
-                    const crossProduct = cross(this.value, randomVector);
-                    if (crossProduct.x !== 0 || crossProduct.y !== 0 || crossProduct.z !== 0) {
-                        this.perpendicularA = crossProduct;
-                        break;
-                    }
-                }
+            // Rodrigues' rotation formula
+            const x = vector.x * cos + (axis.y * vector.z - axis.z * vector.y) * sin + axis.x * (axis.x * vector.x + axis.y * vector.y + axis.z * vector.z) * (1 - cos);
+            const y = vector.y * cos + (axis.z * vector.x - axis.x * vector.z) * sin + axis.y * (axis.x * vector.x + axis.y * vector.y + axis.z * vector.z) * (1 - cos);
+            const z = vector.z * cos + (axis.x * vector.y - axis.y * vector.x) * sin + axis.z * (axis.x * vector.x + axis.y * vector.y + axis.z * vector.z) * (1 - cos);
 
-                this.perpendicularB = cross(this.value, this.perpendicularA);
-            }
-
-            rotateA(angle) {
-                // rotate value and perpendicularB around perpendicularA
-                const cos = Math.cos(angle);
-                const sin = Math.sin(angle);
-                const x = this.value.x * cos + this.perpendicularB.x * sin;
-                const y = this.value.y * cos + this.perpendicularB.y * sin;
-                const z = this.value.z * cos + this.perpendicularB.z * sin;
-                this.perpendicularB.x = -this.value.x * sin + this.perpendicularB.x * cos;
-                this.perpendicularB.y = -this.value.y * sin + this.perpendicularB.y * cos;
-                this.perpendicularB.z = -this.value.z * sin + this.perpendicularB.z * cos;
-                this.value.x = x;
-                this.value.y = y;
-                this.value.z = z;
-
-                // make sure that all components are unit vectors again
-                const Ar = Math.sqrt(this.perpendicularA.x * this.perpendicularA.x + this.perpendicularA.y * this.perpendicularA.y + this.perpendicularA.z * this.perpendicularA.z);
-                this.perpendicularA.x /= Ar;
-                this.perpendicularA.y /= Ar;
-                this.perpendicularA.z /= Ar;
-
-                const Br = Math.sqrt(this.perpendicularB.x * this.perpendicularB.x + this.perpendicularB.y * this.perpendicularB.y + this.perpendicularB.z * this.perpendicularB.z);
-                this.perpendicularB.x /= Br;
-                this.perpendicularB.y /= Br;
-                this.perpendicularB.z /= Br;
-
-                const Vr = Math.sqrt(this.value.x * this.value.x + this.value.y * this.value.y + this.value.z * this.value.z);
-                this.value.x /= Vr;
-                this.value.y /= Vr;
-                this.value.z /= Vr;
-            }
-
-            rotateB(angle) {
-                // rotate value and perpendicularA around perpendicularB
-                const cos = Math.cos(angle);
-                const sin = Math.sin(angle);
-                const x = this.value.x * cos + this.perpendicularA.x * sin;
-                const y = this.value.y * cos + this.perpendicularA.y * sin;
-                const z = this.value.z * cos + this.perpendicularA.z * sin;
-                this.perpendicularA.x = -this.value.x * sin + this.perpendicularA.x * cos;
-                this.perpendicularA.y = -this.value.y * sin + this.perpendicularA.y * cos;
-                this.perpendicularA.z = -this.value.z * sin + this.perpendicularA.z * cos;
-                this.value.x = x;
-                this.value.y = y;
-                this.value.z = z;
-
-                // make sure that all components are unit vectors again
-                const Ar = Math.sqrt(this.perpendicularA.x * this.perpendicularA.x + this.perpendicularA.y * this.perpendicularA.y + this.perpendicularA.z * this.perpendicularA.z);
-                this.perpendicularA.x /= Ar;
-                this.perpendicularA.y /= Ar;
-                this.perpendicularA.z /= Ar;
-
-                const Br = Math.sqrt(this.perpendicularB.x * this.perpendicularB.x + this.perpendicularB.y * this.perpendicularB.y + this.perpendicularB.z * this.perpendicularB.z);
-                this.perpendicularB.x /= Br;
-                this.perpendicularB.y /= Br;
-                this.perpendicularB.z /= Br;
-
-                const Vr = Math.sqrt(this.value.x * this.value.x + this.value.y * this.value.y + this.value.z * this.value.z);
-                this.value.x /= Vr;
-                this.value.y /= Vr;
-                this.value.z /= Vr;
-            }
-
-            get x() {
-                return this.value.x;
-            }
-
-            get y() {
-                return this.value.y;
-            }
-
-            get z() {
-                return this.value.z;
-            }
-        }
-
-        // Create unit vector parameters
-        const lightDirection = new UnitVectorParameter(0, 1, -1);
-        const foldADirection = new UnitVectorParameter(1, 1, 0);
-        const foldBDirection = new UnitVectorParameter(0, 1, 1);
+            return normalizeVector(x, y, z);
+        };
 
         const { PFEditor } = ParameterFlow;
 
@@ -162,15 +68,33 @@
                 cameraYaw: 0,
                 cameraPitch: 0,
                 cameraZoom: 1.0,
-                lightX: lightDirection.x,
-                lightY: lightDirection.y,
-                lightZ: lightDirection.z,
-                foldAX: foldADirection.x,
-                foldAY: foldADirection.y,
-                foldAZ: foldADirection.z,
-                foldBX: foldBDirection.x,
-                foldBY: foldBDirection.y,
-                foldBZ: foldBDirection.z,
+                lightX: 0,
+                lightY: 0.7071067811865475, // 1/sqrt(2)
+                lightZ: -0.7071067811865475, // -1/sqrt(2)
+                lightAxisAX: 0.7071067811865475, // 1/sqrt(2)
+                lightAxisAY: 0,
+                lightAxisAZ: 0.7071067811865475, // 1/sqrt(2)
+                lightAxisBX: 0,
+                lightAxisBY: 1,
+                lightAxisBZ: 0,
+                foldAX: 0.7071067811865475, // 1/sqrt(2)
+                foldAY: 0.7071067811865475, // 1/sqrt(2)
+                foldAZ: 0,
+                foldAAxisAX: 0,
+                foldAAxisAY: 0,
+                foldAAxisAZ: 1,
+                foldAAxisBX: -0.7071067811865475, // -1/sqrt(2)
+                foldAAxisBY: 0.7071067811865475, // 1/sqrt(2)
+                foldAAxisBZ: 0,
+                foldBX: 0,
+                foldBY: 0.7071067811865475, // 1/sqrt(2)
+                foldBZ: 0.7071067811865475, // 1/sqrt(2)
+                foldBAxisAX: 0.7071067811865475, // 1/sqrt(2)
+                foldBAxisAY: 0,
+                foldBAxisAZ: -0.7071067811865475, // -1/sqrt(2)
+                foldBAxisBX: 0,
+                foldBAxisBY: 1,
+                foldBAxisBZ: 0,
                 translateX: -10.0,
                 translateY: 3.0,
                 translateZ: 0.0,
@@ -212,30 +136,69 @@
                     };
                 },
                 'lightDirection': (state, { dx, dy }) => {
-                    lightDirection.rotateA(-dy / 300);
-                    lightDirection.rotateB(dx / 300);
+                    let lightVector = { x: state.lightX, y: state.lightY, z: state.lightZ };
+                    let axisA = { x: state.lightAxisAX, y: state.lightAxisAY, z: state.lightAxisAZ };
+                    let axisB = { x: state.lightAxisBX, y: state.lightAxisBY, z: state.lightAxisBZ };
+
+                    lightVector = rotateVectorAroundAxis(lightVector, axisA, -dy / 300);
+                    axisB = rotateVectorAroundAxis(axisB, axisA, -dy / 300);
+                    lightVector = rotateVectorAroundAxis(lightVector, axisB, dx / 300);
+                    axisA = rotateVectorAroundAxis(axisA, axisB, dx / 300);
+
                     return {
-                        lightX: lightDirection.x - state.lightX,
-                        lightY: lightDirection.y - state.lightY,
-                        lightZ: lightDirection.z - state.lightZ
+                        lightX: lightVector.x - state.lightX,
+                        lightY: lightVector.y - state.lightY,
+                        lightZ: lightVector.z - state.lightZ,
+                        lightAxisAX: axisA.x - state.lightAxisAX,
+                        lightAxisAY: axisA.y - state.lightAxisAY,
+                        lightAxisAZ: axisA.z - state.lightAxisAZ,
+                        lightAxisBX: axisB.x - state.lightAxisBX,
+                        lightAxisBY: axisB.y - state.lightAxisBY,
+                        lightAxisBZ: axisB.z - state.lightAxisBZ
                     };
                 },
                 'foldADirection': (state, { dx, dy }) => {
-                    foldADirection.rotateA(-dy / 1000);
-                    foldADirection.rotateB(dx / 1000);
+                    let foldVector = { x: state.foldAX, y: state.foldAY, z: state.foldAZ };
+                    let axisA = { x: state.foldAAxisAX, y: state.foldAAxisAY, z: state.foldAAxisAZ };
+                    let axisB = { x: state.foldAAxisBX, y: state.foldAAxisBY, z: state.foldAAxisBZ };
+
+                    foldVector = rotateVectorAroundAxis(foldVector, axisA, -dy / 1000);
+                    axisB = rotateVectorAroundAxis(axisB, axisA, -dy / 1000);
+                    foldVector = rotateVectorAroundAxis(foldVector, axisB, dx / 1000);
+                    axisA = rotateVectorAroundAxis(axisA, axisB, dx / 1000);
+
                     return {
-                        foldAX: foldADirection.x - state.foldAX,
-                        foldAY: foldADirection.y - state.foldAY,
-                        foldAZ: foldADirection.z - state.foldAZ
+                        foldAX: foldVector.x - state.foldAX,
+                        foldAY: foldVector.y - state.foldAY,
+                        foldAZ: foldVector.z - state.foldAZ,
+                        foldAAxisAX: axisA.x - state.foldAAxisAX,
+                        foldAAxisAY: axisA.y - state.foldAAxisAY,
+                        foldAAxisAZ: axisA.z - state.foldAAxisAZ,
+                        foldAAxisBX: axisB.x - state.foldAAxisBX,
+                        foldAAxisBY: axisB.y - state.foldAAxisBY,
+                        foldAAxisBZ: axisB.z - state.foldAAxisBZ
                     };
                 },
                 'foldBDirection': (state, { dx, dy }) => {
-                    foldBDirection.rotateA(-dy / 1000);
-                    foldBDirection.rotateB(dx / 1000);
+                    let foldVector = { x: state.foldBX, y: state.foldBY, z: state.foldBZ };
+                    let axisA = { x: state.foldBAxisAX, y: state.foldBAxisAY, z: state.foldBAxisAZ };
+                    let axisB = { x: state.foldBAxisBX, y: state.foldBAxisBY, z: state.foldBAxisBZ };
+
+                    foldVector = rotateVectorAroundAxis(foldVector, axisA, -dy / 1000);
+                    axisB = rotateVectorAroundAxis(axisB, axisA, -dy / 1000);
+                    foldVector = rotateVectorAroundAxis(foldVector, axisB, dx / 1000);
+                    axisA = rotateVectorAroundAxis(axisA, axisB, dx / 1000);
+
                     return {
-                        foldBX: foldBDirection.x - state.foldBX,
-                        foldBY: foldBDirection.y - state.foldBY,
-                        foldBZ: foldBDirection.z - state.foldBZ
+                        foldBX: foldVector.x - state.foldBX,
+                        foldBY: foldVector.y - state.foldBY,
+                        foldBZ: foldVector.z - state.foldBZ,
+                        foldBAxisAX: axisA.x - state.foldBAxisAX,
+                        foldBAxisAY: axisA.y - state.foldBAxisAY,
+                        foldBAxisAZ: axisA.z - state.foldBAxisAZ,
+                        foldBAxisBX: axisB.x - state.foldBAxisBX,
+                        foldBAxisBY: axisB.y - state.foldBAxisBY,
+                        foldBAxisBZ: axisB.z - state.foldBAxisBZ
                     };
                 },
                 'translateXY': (state, { dx, dy }) => {
@@ -529,16 +492,16 @@
             const cameraDirY = sinPitch;
             const cameraDirZ = cosYaw * cosPitch;
 
-            // Use UnitVectorParameter values directly (they're already normalized)
-            const lightX = lightDirection.x;
-            const lightY = lightDirection.y;
-            const lightZ = lightDirection.z;
-            const foldAX = foldADirection.x;
-            const foldAY = foldADirection.y;
-            const foldAZ = foldADirection.z;
-            const foldBX = foldBDirection.x;
-            const foldBY = foldBDirection.y;
-            const foldBZ = foldBDirection.z;
+            // Use values directly from editor state (they're already normalized)
+            const lightX = values.lightX;
+            const lightY = values.lightY;
+            const lightZ = values.lightZ;
+            const foldAX = values.foldAX;
+            const foldAY = values.foldAY;
+            const foldAZ = values.foldAZ;
+            const foldBX = values.foldBX;
+            const foldBY = values.foldBY;
+            const foldBZ = values.foldBZ;
 
             // Set uniforms
             gl.uniform2f(resolutionLocation, canvas.width, canvas.height);
