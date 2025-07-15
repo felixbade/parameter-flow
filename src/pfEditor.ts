@@ -17,10 +17,14 @@ export class PFEditor {
     private timelinePlayer: TimelinePlayer;
     private _pointerLockMoveHandler: ((event: MouseEvent) => void) | null;
     private _keyboardListener: ((event: KeyboardEvent) => void) | null;
+    private currentHandlerIndex: number;
+    private handlerNames: string[];
 
     constructor(config: PFEditorConfig) {
         this.state = { ...config.variables };
         this.handlers = config.handlers;
+        this.handlerNames = Object.keys(config.handlers);
+        this.currentHandlerIndex = 0;
 
         this.timelinePlayer = new TimelinePlayer(config);
 
@@ -43,6 +47,14 @@ export class PFEditor {
                 } else {
                     document.body.requestPointerLock();
                 }
+            } else if (event.code === 'ArrowUp') {
+                event.preventDefault();
+                this.currentHandlerIndex = (this.currentHandlerIndex - 1 + this.handlerNames.length) % this.handlerNames.length;
+                console.log('Active handler:', this.handlerNames[this.currentHandlerIndex]);
+            } else if (event.code === 'ArrowDown') {
+                event.preventDefault();
+                this.currentHandlerIndex = (this.currentHandlerIndex + 1) % this.handlerNames.length;
+                console.log('Active handler:', this.handlerNames[this.currentHandlerIndex]);
             }
         }).bind(this);
 
@@ -52,11 +64,15 @@ export class PFEditor {
 
     private _setupPointerLockListener(): void {
         this._pointerLockMoveHandler = ((event: MouseEvent) => {
-            if (document.pointerLockElement && this.handlers.pan) {
-                this.handlers.pan(this.state, {
-                    dx: event.movementX,
-                    dy: event.movementY
-                });
+            if (document.pointerLockElement && this.handlerNames.length > 0) {
+                const currentHandlerName = this.handlerNames[this.currentHandlerIndex];
+                const currentHandler = this.handlers[currentHandlerName];
+                if (currentHandler) {
+                    currentHandler(this.state, {
+                        dx: event.movementX,
+                        dy: event.movementY
+                    });
+                }
             }
         }).bind(this);
 

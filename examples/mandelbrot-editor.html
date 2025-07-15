@@ -39,7 +39,10 @@
                     const zoom = Math.pow(2, zoomLog);
                     state.x -= dx * 0.001 / zoom;
                     state.y += dy * 0.001 / zoom;
-                }
+                },
+                'zoom': (state, { dx, dy }) => {
+                    state.zoomLog -= dy * 0.001;
+                },
             }
         });
 
