@@ -180,6 +180,17 @@
         resizeCanvas();
         window.addEventListener('resize', resizeCanvas);
 
+        document.addEventListener('keydown', (event) => {
+            if (event.key === 'f' || event.key === 'F') {
+                event.preventDefault();
+                if (!document.fullscreenElement) {
+                    document.documentElement.requestFullscreen()
+                } else {
+                    document.exitFullscreen()
+                }
+            }
+        });
+
         const render = () => {
             gl.useProgram(program);
 
