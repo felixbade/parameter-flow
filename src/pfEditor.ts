@@ -23,12 +23,13 @@ export class PFEditor {
     private animation!: PFAnimation;
     private handlers: PFEditorConfig['handlers'];
     private timelinePlayer: TimelinePlayer;
-    private _pointerLockMoveHandler: ((event: MouseEvent) => void) | null;
+    private _mouseMoveHandler: ((event: MouseEvent) => void) | null;
     private _keyboardListener: ((event: KeyboardEvent) => void) | null;
     private currentHandlerIndex: number;
     private handlerNames: string[];
     private _beforeUnloadHandler: (() => void) | null;
     private _initialValues: Record<string, number>;
+    private _isFirstMouseMove: boolean;
 
     constructor(config: PFEditorConfig) {
         this._initialValues = { ...config.variables };
@@ -52,9 +53,10 @@ export class PFEditor {
             this.timelinePlayer.seek(savedTime);
         }
 
-        this._pointerLockMoveHandler = null;
+        this._mouseMoveHandler = null;
         this._keyboardListener = null;
         this._beforeUnloadHandler = null;
+        this._isFirstMouseMove = true;
 
         this._setupPointerLockListener();
         this._setupEventListeners();
@@ -118,7 +120,14 @@ export class PFEditor {
     }
 
     private _setupPointerLockListener(): void {
-        this._pointerLockMoveHandler = ((event: MouseEvent) => {
+        this._mouseMoveHandler = ((event: MouseEvent) => {
+            // Discard the first mouse move event to avoid large initial movement values.
+            // Not sure if this is a bug in Chrome, but when reloading often, it's confusing.
+            if (this._isFirstMouseMove) {
+                this._isFirstMouseMove = false;
+                return;
+            }
+
             if (document.pointerLockElement && this.handlerNames.length > 0) {
                 const currentHandlerName = this.handlerNames[this.currentHandlerIndex];
                 const currentHandler = this.handlers[currentHandlerName];
@@ -139,7 +148,7 @@ export class PFEditor {
             }
         }).bind(this);
 
-        document.addEventListener('mousemove', this._pointerLockMoveHandler);
+        document.addEventListener('mousemove', this._mouseMoveHandler);
     }
 
     private _setupEventListeners(): void {
@@ -174,9 +183,9 @@ export class PFEditor {
     }
 
     public destroy(): void {
-        if (this._pointerLockMoveHandler) {
-            document.removeEventListener('mousemove', this._pointerLockMoveHandler);
-            this._pointerLockMoveHandler = null;
+        if (this._mouseMoveHandler) {
+            document.removeEventListener('mousemove', this._mouseMoveHandler);
+            this._mouseMoveHandler = null;
         }
         if (this._keyboardListener) {
             window.removeEventListener('keydown', this._keyboardListener);
