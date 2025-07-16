@@ -87,6 +87,9 @@ export class PFEditor {
                     document.exitPointerLock();
                 }
                 this.importAnimation();
+            } else if (event.code === 'Backspace') {
+                event.preventDefault();
+                this.deleteCurrentKeyframe();
             }
         }).bind(this);
 
@@ -254,6 +257,19 @@ export class PFEditor {
             this.timelinePlayer.seek(0);
         } else {
             console.error('Invalid animation file format');
+        }
+    }
+
+    private deleteCurrentKeyframe(): void {
+        const editedParameters = this.getEditedParameters();
+        if (editedParameters.length === 0) {
+            return;
+        }
+
+        const currentTime = this.timelinePlayer.currentTime;
+
+        for (const parameter of editedParameters) {
+            this.animation.removeKeyframe(parameter, currentTime);
         }
     }
 }
