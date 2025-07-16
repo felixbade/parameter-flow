@@ -7,18 +7,9 @@ interface ParameterKeyframe {
 
 export class PFAnimation {
     private _parameters: Record<string, ParameterKeyframe[]>;
-    private _initialValues: Record<string, number>;
 
     constructor(public parameters: Record<string, ParameterKeyframe[]>) {
         this._parameters = parameters;
-        this._initialValues = {};
-
-        // Store initial values so they can be restored when the first keyframe is removed
-        for (const [key, keyframes] of Object.entries(parameters)) {
-            if (keyframes.length > 0) {
-                this._initialValues[key] = keyframes[0].value;
-            }
-        }
     }
 
     addOrUpdateKeyframe(parameter: string, time: number, value: number): void {
@@ -144,7 +135,7 @@ export class PFAnimation {
         return { previous, next };
     }
 
-    removeKeyframe(parameter: string, time: number): boolean {
+    removeKeyframe(parameter: string, time: number, initialValue?: number): boolean {
         if (!this._parameters[parameter]) {
             return false;
         }
@@ -157,15 +148,14 @@ export class PFAnimation {
         }
 
         if (keyframeIndex === 0) {
-            const initialValue = this._initialValues[parameter] ?? 0;
-            keyframes[0].value = initialValue;
-            return true;
-
+            if (initialValue !== undefined) {
+                keyframes[0].value = initialValue;
+                return true;
+            }
+            return false;
         } else {
             keyframes.splice(keyframeIndex, 1);
             return true;
         }
     }
-
-
 }

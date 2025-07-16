@@ -21,16 +21,25 @@ export class PFEditor {
     private currentHandlerIndex: number;
     private handlerNames: string[];
     private _beforeUnloadHandler: (() => void) | null;
+    private _initialValues: Record<string, number>;
 
     constructor(config: PFEditorConfig) {
-        // Check for existing animation data in localStorage
+        this._initialValues = { ...config.variables };
+
         const savedAnimationData = this.loadFromLocalStorage();
 
         if (savedAnimationData && savedAnimationData.parameters) {
-            // Use saved animation data
-            this.animation = new PFAnimation(savedAnimationData.parameters);
+            const parameters = { ...savedAnimationData.parameters };
+
+            // If new parameters were added in the code, they are not yet in localstorage
+            for (const [key, initialValue] of Object.entries(this._initialValues)) {
+                if (!parameters[key] || parameters[key].length === 0) {
+                    parameters[key] = [{ time: 0, value: initialValue }];
+                }
+            }
+
+            this.animation = new PFAnimation(parameters);
         } else {
-            // Initialize animation with initial keyframes at time 0
             const initialKeyframes: Record<string, { time: number; value: number }[]> = {};
             for (const [key, value] of Object.entries(config.variables)) {
                 initialKeyframes[key] = [{ time: 0, value }];
@@ -290,7 +299,15 @@ export class PFEditor {
 
     private loadAnimationData(animationData: any): void {
         if (animationData.parameters) {
-            this.animation = new PFAnimation(animationData.parameters);
+            const parameters = { ...animationData.parameters };
+
+            for (const [key, initialValue] of Object.entries(this._initialValues)) {
+                if (!parameters[key] || parameters[key].length === 0) {
+                    parameters[key] = [{ time: 0, value: initialValue }];
+                }
+            }
+
+            this.animation = new PFAnimation(parameters);
         } else {
             console.error('Invalid animation file format');
         }
@@ -305,7 +322,8 @@ export class PFEditor {
         const currentTime = this.timelinePlayer.currentTime;
 
         for (const parameter of editedParameters) {
-            this.animation.removeKeyframe(parameter, currentTime);
+            const initialValue = this._initialValues[parameter];
+            this.animation.removeKeyframe(parameter, currentTime, initialValue);
         }
         this.saveToLocalStorage();
     }
