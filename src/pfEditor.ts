@@ -1,6 +1,13 @@
 import { TimelinePlayer } from './timelinePlayer';
 import { PFAnimation } from './pfAnimation';
 
+interface ParameterKeyframe {
+    time: number;
+    value: number;
+    speed?: number;
+    acceleration?: number;
+}
+
 interface Handler {
     (state: Record<string, number>, ...args: any[]): Record<string, number>;
 }
@@ -13,7 +20,7 @@ interface PFEditorConfig {
 }
 
 export class PFEditor {
-    private animation: PFAnimation;
+    private animation!: PFAnimation;
     private handlers: PFEditorConfig['handlers'];
     private timelinePlayer: TimelinePlayer;
     private _pointerLockMoveHandler: ((event: MouseEvent) => void) | null;
@@ -29,22 +36,9 @@ export class PFEditor {
         const savedAnimationData = this.loadFromLocalStorage();
 
         if (savedAnimationData && savedAnimationData.parameters) {
-            const parameters = { ...savedAnimationData.parameters };
-
-            // If new parameters were added in the code, they are not yet in localstorage
-            for (const [key, initialValue] of Object.entries(this._initialValues)) {
-                if (!parameters[key] || parameters[key].length === 0) {
-                    parameters[key] = [{ time: 0, value: initialValue }];
-                }
-            }
-
-            this.animation = new PFAnimation(parameters);
+            this.loadAnimation(savedAnimationData.parameters);
         } else {
-            const initialKeyframes: Record<string, { time: number; value: number }[]> = {};
-            for (const [key, value] of Object.entries(config.variables)) {
-                initialKeyframes[key] = [{ time: 0, value }];
-            }
-            this.animation = new PFAnimation(initialKeyframes);
+            this.loadAnimation();
         }
 
         this.handlers = config.handlers;
@@ -297,17 +291,22 @@ export class PFEditor {
         input.click();
     }
 
+    private loadAnimation(parameters?: Record<string, ParameterKeyframe[]>): void {
+        let keyframes: Record<string, ParameterKeyframe[]> = {};
+        for (const [key, value] of Object.entries(this._initialValues)) {
+            keyframes[key] = [{ time: 0, value }];
+        }
+
+        if (parameters) {
+            keyframes = { ...keyframes, ...parameters };
+        }
+
+        this.animation = new PFAnimation(keyframes);
+    }
+
     private loadAnimationData(animationData: any): void {
         if (animationData.parameters) {
-            const parameters = { ...animationData.parameters };
-
-            for (const [key, initialValue] of Object.entries(this._initialValues)) {
-                if (!parameters[key] || parameters[key].length === 0) {
-                    parameters[key] = [{ time: 0, value: initialValue }];
-                }
-            }
-
-            this.animation = new PFAnimation(parameters);
+            this.loadAnimation(animationData.parameters);
         } else {
             console.error('Invalid animation file format');
         }
