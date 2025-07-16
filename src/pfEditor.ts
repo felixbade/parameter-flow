@@ -20,6 +20,7 @@ export class PFEditor {
     private _keyboardListener: ((event: KeyboardEvent) => void) | null;
     private currentHandlerIndex: number;
     private handlerNames: string[];
+    private _beforeUnloadHandler: (() => void) | null;
 
     constructor(config: PFEditorConfig) {
         // Check for existing animation data in localStorage
@@ -43,10 +44,17 @@ export class PFEditor {
 
         this.timelinePlayer = new TimelinePlayer(config);
 
+        const savedTime = this.loadCurrentTimeFromLocalStorage();
+        if (savedTime !== null) {
+            this.timelinePlayer.seek(savedTime);
+        }
+
         this._pointerLockMoveHandler = null;
         this._keyboardListener = null;
+        this._beforeUnloadHandler = null;
 
         this._setupPointerLockListener();
+        this._setupEventListeners();
 
         if (config.keyboardListener !== false) {
             this._setupKeyboardListener();
@@ -131,6 +139,21 @@ export class PFEditor {
         document.addEventListener('mousemove', this._pointerLockMoveHandler);
     }
 
+    private _setupEventListeners(): void {
+        this.timelinePlayer.addEventListener('pause', () => {
+            this.saveCurrentTimeToLocalStorage();
+        });
+
+        this.timelinePlayer.addEventListener('seek', () => {
+            this.saveCurrentTimeToLocalStorage();
+        });
+
+        this._beforeUnloadHandler = () => {
+            this.saveCurrentTimeToLocalStorage();
+        };
+        window.addEventListener('beforeunload', this._beforeUnloadHandler);
+    }
+
     public getCurrentValues(): Record<string, number> {
         return this.animation.getValuesAt(this.timelinePlayer.currentTime);
     }
@@ -155,6 +178,10 @@ export class PFEditor {
         if (this._keyboardListener) {
             window.removeEventListener('keydown', this._keyboardListener);
             this._keyboardListener = null;
+        }
+        if (this._beforeUnloadHandler) {
+            window.removeEventListener('beforeunload', this._beforeUnloadHandler);
+            this._beforeUnloadHandler = null;
         }
         this.timelinePlayer.destroy();
     }
@@ -264,7 +291,6 @@ export class PFEditor {
     private loadAnimationData(animationData: any): void {
         if (animationData.parameters) {
             this.animation = new PFAnimation(animationData.parameters);
-            this.timelinePlayer.seek(0);
         } else {
             console.error('Invalid animation file format');
         }
@@ -300,6 +326,21 @@ export class PFEditor {
             } catch (error) {
                 console.error('Failed to parse saved animation data from localStorage:', error);
                 return null;
+            }
+        }
+        return null;
+    }
+
+    private saveCurrentTimeToLocalStorage(): void {
+        localStorage.setItem('pf-editor-current-time', this.timelinePlayer.currentTime.toString());
+    }
+
+    private loadCurrentTimeFromLocalStorage(): number | null {
+        const savedTime = localStorage.getItem('pf-editor-current-time');
+        if (savedTime) {
+            const time = parseFloat(savedTime);
+            if (!isNaN(time) && time >= 0 && time <= this.timelinePlayer.duration) {
+                return time;
             }
         }
         return null;
