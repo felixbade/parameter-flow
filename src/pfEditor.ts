@@ -22,12 +22,20 @@ export class PFEditor {
     private handlerNames: string[];
 
     constructor(config: PFEditorConfig) {
-        // Initialize animation with initial keyframes at time 0
-        const initialKeyframes: Record<string, { time: number; value: number }[]> = {};
-        for (const [key, value] of Object.entries(config.variables)) {
-            initialKeyframes[key] = [{ time: 0, value }];
+        // Check for existing animation data in localStorage
+        const savedAnimationData = this.loadFromLocalStorage();
+
+        if (savedAnimationData && savedAnimationData.parameters) {
+            // Use saved animation data
+            this.animation = new PFAnimation(savedAnimationData.parameters);
+        } else {
+            // Initialize animation with initial keyframes at time 0
+            const initialKeyframes: Record<string, { time: number; value: number }[]> = {};
+            for (const [key, value] of Object.entries(config.variables)) {
+                initialKeyframes[key] = [{ time: 0, value }];
+            }
+            this.animation = new PFAnimation(initialKeyframes);
         }
-        this.animation = new PFAnimation(initialKeyframes);
 
         this.handlers = config.handlers;
         this.handlerNames = Object.keys(config.handlers);
@@ -90,6 +98,7 @@ export class PFEditor {
             } else if (event.code === 'Backspace') {
                 event.preventDefault();
                 this.deleteCurrentKeyframe();
+                this.saveToLocalStorage();
             }
         }).bind(this);
 
@@ -114,6 +123,7 @@ export class PFEditor {
                         const newValue = currentState[key] + delta;
                         this.animation.addOrUpdateKeyframe(key, this.timelinePlayer.currentTime, newValue);
                     }
+                    this.saveToLocalStorage();
                 }
             }
         }).bind(this);
@@ -271,5 +281,27 @@ export class PFEditor {
         for (const parameter of editedParameters) {
             this.animation.removeKeyframe(parameter, currentTime);
         }
+        this.saveToLocalStorage();
+    }
+
+    private saveToLocalStorage(): void {
+        const animationData = {
+            duration: this.timelinePlayer.duration,
+            parameters: this.animation.parameters,
+        };
+        localStorage.setItem('parameter-flow-animation', JSON.stringify(animationData));
+    }
+
+    private loadFromLocalStorage(): any | null {
+        const savedData = localStorage.getItem('parameter-flow-animation');
+        if (savedData) {
+            try {
+                return JSON.parse(savedData);
+            } catch (error) {
+                console.error('Failed to parse saved animation data from localStorage:', error);
+                return null;
+            }
+        }
+        return null;
     }
 }

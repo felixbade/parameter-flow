@@ -15,6 +15,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     - Return enters pointer lock mode to edit parameter values.
     - Backspace deletes the current keyframe.
 - Export and import by pressing `E` and `I` respectively.
+- State is saved to local storage and loaded on page load.
 
 ### Changed
 - Renamed `examples/index.html` to `examples/playback.html`.
