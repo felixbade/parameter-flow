@@ -16,6 +16,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     - Backspace deletes the current keyframe.
 - Export and import by pressing `E` and `I` respectively.
 - Animation state and player current time are saved to local storage and loaded on page load.
+- 'H' toggles the timeline visibility.
 
 ### Changed
 - Renamed `examples/index.html` to `examples/playback.html`.

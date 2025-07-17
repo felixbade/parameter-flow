@@ -112,6 +112,9 @@ export class PFEditor {
                 event.preventDefault();
                 this.deleteCurrentKeyframe();
                 this.saveToLocalStorage();
+            } else if (event.code === 'KeyH') {
+                event.preventDefault();
+                this.toggleTimelineVisibility();
             }
         }).bind(this);
 
@@ -370,5 +373,14 @@ export class PFEditor {
             }
         }
         return null;
+    }
+
+    private toggleTimelineVisibility(): void {
+        const timelineElement = this.timelinePlayer.element;
+        if (timelineElement.style.display === 'none') {
+            timelineElement.style.display = '';
+        } else {
+            timelineElement.style.display = 'none';
+        }
     }
 }
