@@ -39,6 +39,8 @@
                 z0y: 0,
                 expx: 2,
                 expy: 0,
+                exp2x: 2,
+                exp2y: 0,
                 colorScale: 1.0,
                 colorOffset: 0.0,
             },
@@ -96,8 +98,8 @@
                     const cos = Math.cos(state.rotation);
                     const sin = Math.sin(state.rotation);
                     return {
-                        expx: dx * cos - dy * sin,
-                        expy: dx * sin + dy * cos
+                        exp2x: dx * cos - dy * sin,
+                        exp2y: dx * sin + dy * cos
                     };
                 },
             }
@@ -143,6 +145,7 @@
             uniform float u_time;
             uniform vec2 u_z0;
             uniform vec2 u_exp;
+            uniform vec2 u_exp2;
             uniform float u_colorScale;
             uniform float u_colorOffset;
 
@@ -162,16 +165,26 @@
                 int i = 0;
                 bool is_inside = true;
                 for(int j = 0; j < 300; j++) {
-                    // Complex power: z^exp where exp is a complex number
+                    // Complex power: z^exp + z^exp2 where exp and exp2 are complex numbers
                     float r = length(z);
 
                     if(r < 1e-10) {
                         z = c;
                     } else {
                         float theta = atan(z.y, z.x);
-                        float new_r = pow(r, u_exp.x) * exp(-u_exp.y * theta);
-                        float new_theta = u_exp.x * theta + u_exp.y * log(r);
-                        z = vec2(new_r * cos(new_theta), new_r * sin(new_theta)) + c;
+
+                        // First term: z^exp
+                        float new_r1 = pow(r, u_exp.x) * exp(-u_exp.y * theta);
+                        float new_theta1 = u_exp.x * theta + u_exp.y * log(r);
+                        vec2 z1 = vec2(new_r1 * cos(new_theta1), new_r1 * sin(new_theta1));
+
+                        // Second term: z^exp2
+                        float new_r2 = pow(r, u_exp2.x) * exp(-u_exp2.y * theta);
+                        float new_theta2 = u_exp2.x * theta + u_exp2.y * log(r);
+                        vec2 z2 = vec2(new_r2 * cos(new_theta2), new_r2 * sin(new_theta2));
+
+                        // Combine: z^exp + z^exp2 + c
+                        z = z1 + z2 + c;
                     }
 
                     if(dot(z, z) > 4.0) {
@@ -237,6 +250,7 @@
         const timeLocation = gl.getUniformLocation(program, 'u_time');
         const z0Location = gl.getUniformLocation(program, 'u_z0');
         const expLocation = gl.getUniformLocation(program, 'u_exp');
+        const exp2Location = gl.getUniformLocation(program, 'u_exp2');
         const colorScaleLocation = gl.getUniformLocation(program, 'u_colorScale');
         const colorOffsetLocation = gl.getUniformLocation(program, 'u_colorOffset');
 
@@ -263,7 +277,7 @@
         const render = () => {
             gl.useProgram(program);
 
-            const { x, y, zoomLog, rotation, z0x, z0y, expx, expy, colorScale, colorOffset } = editor.getCurrentValues();
+            const { x, y, zoomLog, rotation, z0x, z0y, expx, expy, exp2x, exp2y, colorScale, colorOffset } = editor.getCurrentValues();
             const zoom = Math.pow(2, zoomLog);
 
             // Set uniforms
@@ -274,6 +288,7 @@
             gl.uniform1f(timeLocation, editor.currentTime); // Time for animation
             gl.uniform2f(z0Location, z0x, z0y); // Initial z value
             gl.uniform2f(expLocation, expx, expy); // Complex exponent
+            gl.uniform2f(exp2Location, exp2x, exp2y); // Second complex exponent
             gl.uniform1f(colorScaleLocation, colorScale); // Color scale
             gl.uniform1f(colorOffsetLocation, colorOffset); // Color offset
 
