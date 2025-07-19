@@ -46,8 +46,8 @@
                 'pan': (state, { dx, dy }) => {
                     const { zoomLog, rotation } = state;
                     const zoom = Math.pow(2, zoomLog);
-                    dx *= -0.001 / zoom;
-                    dy *= 0.001 / zoom;
+                    dx *= -0.002 / zoom;
+                    dy *= 0.002 / zoom;
                     const cos = Math.cos(rotation);
                     const sin = Math.sin(rotation);
                     return {
@@ -57,7 +57,7 @@
                 },
                 'zoom-rotate': (state, { dx, dy }) => {
                     return {
-                        zoomLog: dy * 0.001,
+                        zoomLog: dy * 0.003,
                         rotation: dx * 0.001
                     };
                 },
@@ -87,6 +87,17 @@
                     return {
                         colorScale: dx * 0.001,
                         colorOffset: dy * 0.001
+                    };
+                },
+                'exp2-modify': (state, { dx, dy }) => {
+                    const zoom = Math.pow(2, state.zoomLog);
+                    dx *= 0.001 / zoom;
+                    dy *= -0.001 / zoom;
+                    const cos = Math.cos(state.rotation);
+                    const sin = Math.sin(state.rotation);
+                    return {
+                        expx: dx * cos - dy * sin,
+                        expy: dx * sin + dy * cos
                     };
                 },
             }
@@ -150,7 +161,7 @@
 
                 int i = 0;
                 bool is_inside = true;
-                for(int j = 0; j < 200; j++) {
+                for(int j = 0; j < 300; j++) {
                     // Complex power: z^exp where exp is a complex number
                     float r = length(z);
 
@@ -171,11 +182,11 @@
                 }
 
                 if (is_inside) {
-                    i = 200;
+                    i = 300;
                 }
-                float t = float(i) / 200.0;
+                float t = float(i) / 300.0;
                 vec3 color = vec3(1.0 / (1.0 + exp(-u_colorOffset) * pow(t, u_colorScale)));
-                gl_FragColor = vec4(color, 1.0);
+                gl_FragColor = vec4(color.x, color.y, color.z, 1.0);
             }
         `;
 
