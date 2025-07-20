@@ -45,7 +45,7 @@
                 colorOffset: 0.0,
             },
             handlers: {
-                'pan': (state, { dx, dy }) => {
+                'pan': (state, { dx, dy, sdx, sdy }) => {
                     const { zoomLog, rotation } = state;
                     const zoom = Math.pow(2, zoomLog);
                     dx *= -0.002 / zoom;
@@ -54,11 +54,21 @@
                     const sin = Math.sin(rotation);
                     return {
                         x: dx * cos - dy * sin,
-                        y: dx * sin + dy * cos
+                        y: dx * sin + dy * cos,
+                        zoomLog: -sdy * 0.003,
+                        rotation: -sdx * 0.002
                     };
                 },
-                'zoom-rotate': (state, { dx, dy }) => {
+                'zoom-rotate': (state, { dx, dy, sdx, sdy }) => {
+                    const { zoomLog, rotation } = state;
+                    const zoom = Math.pow(2, zoomLog);
+                    sdx *= 0.002 / zoom;
+                    sdy *= -0.002 / zoom;
+                    const cos = Math.cos(rotation);
+                    const sin = Math.sin(rotation);
                     return {
+                        x: sdx * cos - sdy * sin,
+                        y: sdx * sin + sdy * cos,
                         zoomLog: dy * 0.003,
                         rotation: dx * 0.001
                     };

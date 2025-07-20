@@ -24,6 +24,7 @@ export class PFEditor {
     private handlers: PFEditorConfig['handlers'];
     private timelinePlayer: TimelinePlayer;
     private _mouseMoveHandler: ((event: MouseEvent) => void) | null;
+    private _wheelHandler: ((event: WheelEvent) => void) | null;
     private _keyboardListener: ((event: KeyboardEvent) => void) | null;
     private currentHandlerIndex: number;
     private handlerNames: string[];
@@ -54,6 +55,7 @@ export class PFEditor {
         }
 
         this._mouseMoveHandler = null;
+        this._wheelHandler = null;
         this._keyboardListener = null;
         this._beforeUnloadHandler = null;
         this._isFirstMouseMove = true;
@@ -139,7 +141,9 @@ export class PFEditor {
 
                     const stateDelta = currentHandler(currentState, {
                         dx: event.movementX,
-                        dy: event.movementY
+                        dy: event.movementY,
+                        sdx: 0,
+                        sdy: 0,
                     });
 
                     for (const [key, delta] of Object.entries(stateDelta)) {
@@ -152,6 +156,31 @@ export class PFEditor {
         }).bind(this);
 
         document.addEventListener('mousemove', this._mouseMoveHandler);
+
+        this._wheelHandler = ((event: WheelEvent) => {
+            if (document.pointerLockElement && this.handlerNames.length > 0) {
+                const currentHandlerName = this.handlerNames[this.currentHandlerIndex];
+                const currentHandler = this.handlers[currentHandlerName];
+                if (currentHandler) {
+                    const currentState = this.getCurrentValues();
+
+                    const stateDelta = currentHandler(currentState, {
+                        dx: 0,
+                        dy: 0,
+                        sdx: event.deltaX,
+                        sdy: event.deltaY,
+                    });
+
+                    for (const [key, delta] of Object.entries(stateDelta)) {
+                        const newValue = currentState[key] + delta;
+                        this.animation.addOrUpdateKeyframe(key, this.timelinePlayer.currentTime, newValue);
+                    }
+                    this.saveToLocalStorage();
+                }
+            }
+        }).bind(this);
+
+        document.addEventListener('wheel', this._wheelHandler);
     }
 
     private _setupEventListeners(): void {
@@ -189,6 +218,10 @@ export class PFEditor {
         if (this._mouseMoveHandler) {
             document.removeEventListener('mousemove', this._mouseMoveHandler);
             this._mouseMoveHandler = null;
+        }
+        if (this._wheelHandler) {
+            document.removeEventListener('wheel', this._wheelHandler);
+            this._wheelHandler = null;
         }
         if (this._keyboardListener) {
             window.removeEventListener('keydown', this._keyboardListener);
