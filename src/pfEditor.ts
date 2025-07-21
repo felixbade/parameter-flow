@@ -343,7 +343,12 @@ export class PFEditor {
         }
 
         if (parameters) {
-            keyframes = { ...keyframes, ...parameters };
+            // Clean up ghost parameters from other projects
+            for (const key of Object.keys(this._initialValues)) {
+                if (parameters[key]) {
+                    keyframes[key] = parameters[key];
+                }
+            }
         }
 
         this.animation = new PFAnimation(keyframes);
