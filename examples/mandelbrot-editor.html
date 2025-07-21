@@ -43,6 +43,14 @@
                 exp2y: 0,
                 colorScale: 1.0,
                 colorOffset: 0.0,
+                angle_chroma_offset: 0.0,
+                angle_chroma_tightness: 2.0,
+                angle_hue: 0.0,
+                angle_saturation: 0.5,
+                distance_chroma_offset: 0.0,
+                distance_chroma_tightness: 2.0,
+                distance_hue: Math.PI / 2,
+                distance_saturation: 0.5,
             },
             handlers: {
                 'pan': (state, { dx, dy, sdx, sdy }) => {
@@ -57,20 +65,6 @@
                         y: dx * sin + dy * cos,
                         zoomLog: -sdy * 0.003,
                         rotation: -sdx * 0.002
-                    };
-                },
-                'zoom-rotate': (state, { dx, dy, sdx, sdy }) => {
-                    const { zoomLog, rotation } = state;
-                    const zoom = Math.pow(2, zoomLog);
-                    sdx *= 0.002 / zoom;
-                    sdy *= -0.002 / zoom;
-                    const cos = Math.cos(rotation);
-                    const sin = Math.sin(rotation);
-                    return {
-                        x: sdx * cos - sdy * sin,
-                        y: sdx * sin + sdy * cos,
-                        zoomLog: dy * 0.003,
-                        rotation: dx * 0.001
                     };
                 },
                 'z0-modify': (state, { dx, dy }) => {
@@ -95,12 +89,6 @@
                         expy: dx * sin + dy * cos
                     };
                 },
-                'color': (state, { dx, dy }) => {
-                    return {
-                        colorScale: dx * 0.001,
-                        colorOffset: dy * 0.001
-                    };
-                },
                 'exp2-modify': (state, { dx, dy }) => {
                     const zoom = Math.pow(2, state.zoomLog);
                     dx *= 0.001 / zoom;
@@ -110,6 +98,28 @@
                     return {
                         exp2x: dx * cos - dy * sin,
                         exp2y: dx * sin + dy * cos
+                    };
+                },
+                'color': (state, { dx, dy }) => {
+                    return {
+                        colorScale: dx * 0.001,
+                        colorOffset: dy * 0.001
+                    };
+                },
+                'iteration-angle-color': (state, { dx, dy, sdx, sdy }) => {
+                    return {
+                        angle_chroma_offset: dx * 0.01,
+                        angle_chroma_tightness: dy * 0.01,
+                        angle_hue: sdx * 0.01,
+                        // angle_saturation: sdy * 0.01
+                    };
+                },
+                'iteration-distance-color': (state, { dx, dy, sdx, sdy }) => {
+                    return {
+                        distance_chroma_offset: dx * 0.01,
+                        distance_chroma_tightness: dy * 0.01,
+                        distance_hue: sdx * 0.01,
+                        // distance_saturation: sdy * 0.01
                     };
                 },
             }
@@ -158,6 +168,14 @@
             uniform vec2 u_exp2;
             uniform float u_colorScale;
             uniform float u_colorOffset;
+            uniform float u_angle_chroma_offset;
+            uniform float u_angle_chroma_tightness;
+            uniform float u_angle_hue;
+            uniform float u_angle_saturation;
+            uniform float u_distance_chroma_offset;
+            uniform float u_distance_chroma_tightness;
+            uniform float u_distance_hue;
+            uniform float u_distance_saturation;
 
             void main() {
                 vec2 z = u_z0;
@@ -237,22 +255,38 @@
                     }
                 }
 
-                float saturation = 0.5;
                 if (is_inside) {
                     i = 300;
-                    saturation = 0.5;
                 }
                 float t = float(i) / 300.0;
                 vec3 color = vec3(1.0 / (1.0 + exp(-u_colorOffset) * pow(t, u_colorScale)));
-                // equilateral triangle
-                z.x = sin(accumulated_angle / float(i) * 10.0);
-                z.y = sin(accumulated_distance / float(i) * 10.0);
-                // z.x = sin(accumulated_distance / float(i) * 10.0);
-                // z.y = cos(accumulated_distance / float(i) * 10.0);
-                float R = exp(z.x * saturation);
-                float G = exp((z.y * 0.8660254037844386 - z.x * 0.5) * saturation);
-                float B = exp((-z.y * 0.8660254037844386 - z.x * 0.5) * saturation);
-                gl_FragColor = vec4(pow(color.x, R), pow(color.y, G), pow(color.z, B), 1.0);
+
+                float angle_chroma_offset = u_angle_chroma_offset;
+                float angle_chroma_tightness = exp(u_angle_chroma_tightness);
+                float angle_hue = u_angle_hue;
+                float angle_saturation = u_angle_saturation;
+                float angle_chroma = sin(accumulated_angle / float(i) * angle_chroma_tightness + angle_chroma_offset);
+
+                float distance_chroma_offset = u_distance_chroma_offset;
+                float distance_chroma_tightness = exp(u_distance_chroma_tightness);
+                float distance_hue = u_distance_hue;
+                float distance_saturation = u_distance_saturation;
+                float distance_chroma = sin(accumulated_distance / float(i) * distance_chroma_tightness + distance_chroma_offset);
+
+                float R = 0.0;
+                float G = 0.0;
+                float B = 0.0;
+                float a120 = 2.0 * 3.14159265358979323846 / 3.0;
+
+                R += angle_chroma * cos(angle_hue) * angle_saturation;
+                G += angle_chroma * cos(angle_hue + a120) * angle_saturation;
+                B += angle_chroma * cos(angle_hue - a120) * angle_saturation;
+
+                R += distance_chroma * cos(distance_hue) * distance_saturation;
+                G += distance_chroma * cos(distance_hue + a120) * distance_saturation;
+                B += distance_chroma * cos(distance_hue - a120) * distance_saturation;
+
+                gl_FragColor = vec4(pow(color.x, exp(R)), pow(color.y, exp(G)), pow(color.z, exp(B)), 1.0);
             }
         `;
 
@@ -306,6 +340,14 @@
         const exp2Location = gl.getUniformLocation(program, 'u_exp2');
         const colorScaleLocation = gl.getUniformLocation(program, 'u_colorScale');
         const colorOffsetLocation = gl.getUniformLocation(program, 'u_colorOffset');
+        const angleChromaOffsetLocation = gl.getUniformLocation(program, 'u_angle_chroma_offset');
+        const angleChromaTightnessLocation = gl.getUniformLocation(program, 'u_angle_chroma_tightness');
+        const angleHueLocation = gl.getUniformLocation(program, 'u_angle_hue');
+        const angleSaturationLocation = gl.getUniformLocation(program, 'u_angle_saturation');
+        const distanceChromaOffsetLocation = gl.getUniformLocation(program, 'u_distance_chroma_offset');
+        const distanceChromaTightnessLocation = gl.getUniformLocation(program, 'u_distance_chroma_tightness');
+        const distanceHueLocation = gl.getUniformLocation(program, 'u_distance_hue');
+        const distanceSaturationLocation = gl.getUniformLocation(program, 'u_distance_saturation');
 
         const resizeCanvas = () => {
             const dpr = 1;//window.devicePixelRatio;
@@ -330,7 +372,7 @@
         const render = () => {
             gl.useProgram(program);
 
-            const { x, y, zoomLog, rotation, z0x, z0y, expx, expy, exp2x, exp2y, colorScale, colorOffset } = editor.getCurrentValues();
+            const { x, y, zoomLog, rotation, z0x, z0y, expx, expy, exp2x, exp2y, colorScale, colorOffset, angle_chroma_offset, angle_chroma_tightness, angle_hue, angle_saturation, distance_chroma_offset, distance_chroma_tightness, distance_hue, distance_saturation } = editor.getCurrentValues();
             const zoom = Math.pow(2, zoomLog);
 
             // Set uniforms
@@ -344,6 +386,14 @@
             gl.uniform2f(exp2Location, exp2x, exp2y); // Second complex exponent
             gl.uniform1f(colorScaleLocation, colorScale); // Color scale
             gl.uniform1f(colorOffsetLocation, colorOffset); // Color offset
+            gl.uniform1f(angleChromaOffsetLocation, angle_chroma_offset);
+            gl.uniform1f(angleChromaTightnessLocation, angle_chroma_tightness);
+            gl.uniform1f(angleHueLocation, angle_hue);
+            gl.uniform1f(angleSaturationLocation, angle_saturation);
+            gl.uniform1f(distanceChromaOffsetLocation, distance_chroma_offset);
+            gl.uniform1f(distanceChromaTightnessLocation, distance_chroma_tightness);
+            gl.uniform1f(distanceHueLocation, distance_hue);
+            gl.uniform1f(distanceSaturationLocation, distance_saturation);
 
             // Set up position attribute
             gl.enableVertexAttribArray(positionLocation);
