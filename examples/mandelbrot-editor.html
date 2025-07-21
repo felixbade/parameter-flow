@@ -204,12 +204,18 @@
                     }
                 }
 
+                float saturation = 0.0;
                 if (is_inside) {
                     i = 300;
+                    saturation = 0.5;
                 }
                 float t = float(i) / 300.0;
                 vec3 color = vec3(1.0 / (1.0 + exp(-u_colorOffset) * pow(t, u_colorScale)));
-                gl_FragColor = vec4(color.x, color.y, color.z, 1.0);
+                // equilateral triangle
+                float R = exp(z.x * saturation);
+                float G = exp((z.y * 0.8660254037844386 - z.x * 0.5) * saturation);
+                float B = exp((-z.y * 0.8660254037844386 - z.x * 0.5) * saturation);
+                gl_FragColor = vec4(pow(color.x, R), pow(color.y, G), pow(color.z, B), 1.0);
             }
         `;
 
