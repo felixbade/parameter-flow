@@ -8,23 +8,29 @@
     <script src="../dist/main.js"></script>
     <!-- <script src="https://cdn.jsdelivr.net/npm/parameter-flow@0.4.1/dist/main.js"></script> -->
     <style>
-        canvas {
-            width: 100vw;
-            height: 100vh;
-            display: block;
-            image-rendering: crisp-edges;
-            image-rendering: pixelated;
-        }
-
         body {
             margin: 0;
             overflow: hidden;
+            background: black;
+            width: 100vw;
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        canvas {
+            display: block;
+            background: black;
+            width: 100vw; /* fallback */
+            height: 100vw; /* fallback */
+            max-width: 100vw;
+            max-height: 100vh;
         }
     </style>
 </head>
 
 <body>
-    <canvas id="canvas"></canvas>
+    <canvas id="canvas" width="1080" height="1080"></canvas>
     <script>
         const { PFEditor } = ParameterFlow;
 
@@ -349,14 +355,15 @@
         const distanceHueLocation = gl.getUniformLocation(program, 'u_distance_hue');
         const distanceSaturationLocation = gl.getUniformLocation(program, 'u_distance_saturation');
 
-        const resizeCanvas = () => {
-            const dpr = 1;//window.devicePixelRatio;
-            canvas.width = window.innerWidth * dpr;
-            canvas.height = window.innerHeight * dpr;
-            gl.viewport(0, 0, canvas.width, canvas.height);
-        };
-        resizeCanvas();
-        window.addEventListener('resize', resizeCanvas);
+        // Responsive scaling: set canvas CSS size to largest square that fits in window
+        function fitCanvasToWindow() {
+            const size = Math.min(window.innerWidth, window.innerHeight);
+            canvas.style.width = size + 'px';
+            canvas.style.height = size + 'px';
+        }
+        fitCanvasToWindow();
+        window.addEventListener('resize', fitCanvasToWindow);
+        gl.viewport(0, 0, canvas.width, canvas.height);
 
         document.addEventListener('keydown', (event) => {
             if (event.key === 'f' || event.key === 'F') {
