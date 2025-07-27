@@ -322,8 +322,8 @@ export class PFEditor {
                 const reader = new FileReader();
                 reader.onload = (e) => {
                     try {
-                        const animationData = JSON.parse(e.target?.result as string);
-                        this.loadAnimationData(animationData);
+                        const data = JSON.parse(e.target?.result as string);
+                        this.loadAnimationData(data);
                     } catch (error) {
                         console.error('Failed to parse animation file:', error);
                     }
@@ -358,12 +358,34 @@ export class PFEditor {
         console.debug('Animation loaded');
     }
 
-    private loadAnimationData(animationData: any): void {
-        if (animationData.parameters) {
-            this.loadAnimation(animationData.parameters);
+    private loadAnimationData(data: any): void {
+        if (data.parameters) {
+            // PFEditor animation format
+            this.loadAnimation(data.parameters);
+        } else if (data.variables) {
+            // PFExplorer format - set parameters at current timestamp
+            this.loadParametersFromExplorer(data.variables);
         } else {
-            console.error('Invalid animation file format');
+            console.error('Invalid file format - expected either "parameters" (PFEditor) or "variables" (PFExplorer)');
         }
+    }
+
+    private loadParametersFromExplorer(variables: Record<string, number>): void {
+        console.debug('Loading parameters from PFExplorer file at current timestamp...');
+        const currentTime = this.timelinePlayer.currentTime;
+
+        // Clean up ghost parameters from other projects
+        for (const [key, value] of Object.entries(variables)) {
+            if (key in this._initialValues) {
+                this.animation.addOrUpdateKeyframe(key, currentTime, value);
+                console.debug('Set parameter at current time:', key, '=', value, 'at time:', currentTime);
+            } else {
+                console.debug('Skipping undefined parameter:', key);
+            }
+        }
+
+        this.saveToLocalStorage();
+        console.debug('Parameters loaded from PFExplorer file');
     }
 
     private deleteCurrentKeyframe(): void {
