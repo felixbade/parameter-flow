@@ -139,15 +139,14 @@ export class PFEditor {
                 if (currentHandler) {
                     const currentState = this.getCurrentValues();
 
-                    const stateDelta = currentHandler(currentState, {
+                    const newValues = currentHandler(currentState, {
                         dx: event.movementX,
                         dy: event.movementY,
                         sdx: 0,
                         sdy: 0,
                     });
 
-                    for (const [key, delta] of Object.entries(stateDelta)) {
-                        const newValue = currentState[key] + delta;
+                    for (const [key, newValue] of Object.entries(newValues)) {
                         this.animation.addOrUpdateKeyframe(key, this.timelinePlayer.currentTime, newValue);
                     }
                     this.saveToLocalStorage();
@@ -164,15 +163,14 @@ export class PFEditor {
                 if (currentHandler) {
                     const currentState = this.getCurrentValues();
 
-                    const stateDelta = currentHandler(currentState, {
+                    const newValues = currentHandler(currentState, {
                         dx: 0,
                         dy: 0,
                         sdx: event.deltaX,
                         sdy: event.deltaY,
                     });
 
-                    for (const [key, delta] of Object.entries(stateDelta)) {
-                        const newValue = currentState[key] + delta;
+                    for (const [key, newValue] of Object.entries(newValues)) {
                         this.animation.addOrUpdateKeyframe(key, this.timelinePlayer.currentTime, newValue);
                     }
                     this.saveToLocalStorage();

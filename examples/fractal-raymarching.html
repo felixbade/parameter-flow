@@ -87,8 +87,8 @@
             handlers: {
                 'cameraDirection': (state, { dx, dy }) => {
                     return {
-                        cameraYaw: -dx / 500,
-                        cameraPitch: -dy / 500
+                        cameraYaw: state.cameraYaw - dx / 500,
+                        cameraPitch: state.cameraPitch - dy / 500
                     };
                 },
                 'cameraXY': (state, { dx, dy }) => {
@@ -98,9 +98,9 @@
                     const sinPitch = Math.sin(state.cameraPitch);
 
                     return {
-                        cameraX: -dx / 300 * cosYaw + dy / 300 * sinPitch * sinYaw,
-                        cameraY: -dy / 300 * cosPitch,
-                        cameraZ: dx / 300 * sinYaw + dy / 300 * sinPitch * cosYaw
+                        cameraX: state.cameraX - dx / 300 * cosYaw + dy / 300 * sinPitch * sinYaw,
+                        cameraY: state.cameraY - dy / 300 * cosPitch,
+                        cameraZ: state.cameraZ + dx / 300 * sinYaw + dy / 300 * sinPitch * cosYaw
                     };
                 },
                 'cameraZZoom': (state, { dx, dy }) => {
@@ -114,10 +114,10 @@
                     const cameraDirZ = cosYaw * cosPitch;
 
                     return {
-                        cameraX: -dy / 300 * cameraDirX,
-                        cameraY: -dy / 300 * cameraDirY,
-                        cameraZ: -dy / 300 * cameraDirZ,
-                        cameraZoom: (Math.exp(dx / 1000) - 1) * state.cameraZoom
+                        cameraX: state.cameraX - dy / 300 * cameraDirX,
+                        cameraY: state.cameraY - dy / 300 * cameraDirY,
+                        cameraZ: state.cameraZ - dy / 300 * cameraDirZ,
+                        cameraZoom: state.cameraZoom * Math.exp(dx / 1000)
                     };
                 },
                 'lightDirection': (state, { dx, dy }) => {
@@ -131,15 +131,15 @@
                     axisA = rotateVectorAroundAxis(axisA, axisB, dx / 300);
 
                     return {
-                        lightX: lightVector.x - state.lightX,
-                        lightY: lightVector.y - state.lightY,
-                        lightZ: lightVector.z - state.lightZ,
-                        lightAxisAX: axisA.x - state.lightAxisAX,
-                        lightAxisAY: axisA.y - state.lightAxisAY,
-                        lightAxisAZ: axisA.z - state.lightAxisAZ,
-                        lightAxisBX: axisB.x - state.lightAxisBX,
-                        lightAxisBY: axisB.y - state.lightAxisBY,
-                        lightAxisBZ: axisB.z - state.lightAxisBZ
+                        lightX: lightVector.x,
+                        lightY: lightVector.y,
+                        lightZ: lightVector.z,
+                        lightAxisAX: axisA.x,
+                        lightAxisAY: axisA.y,
+                        lightAxisAZ: axisA.z,
+                        lightAxisBX: axisB.x,
+                        lightAxisBY: axisB.y,
+                        lightAxisBZ: axisB.z
                     };
                 },
                 'foldADirection': (state, { dx, dy }) => {
@@ -153,15 +153,15 @@
                     axisA = rotateVectorAroundAxis(axisA, axisB, dx / 1000);
 
                     return {
-                        foldAX: foldVector.x - state.foldAX,
-                        foldAY: foldVector.y - state.foldAY,
-                        foldAZ: foldVector.z - state.foldAZ,
-                        foldAAxisAX: axisA.x - state.foldAAxisAX,
-                        foldAAxisAY: axisA.y - state.foldAAxisAY,
-                        foldAAxisAZ: axisA.z - state.foldAAxisAZ,
-                        foldAAxisBX: axisB.x - state.foldAAxisBX,
-                        foldAAxisBY: axisB.y - state.foldAAxisBY,
-                        foldAAxisBZ: axisB.z - state.foldAAxisBZ
+                        foldAX: foldVector.x,
+                        foldAY: foldVector.y,
+                        foldAZ: foldVector.z,
+                        foldAAxisAX: axisA.x,
+                        foldAAxisAY: axisA.y,
+                        foldAAxisAZ: axisA.z,
+                        foldAAxisBX: axisB.x,
+                        foldAAxisBY: axisB.y,
+                        foldAAxisBZ: axisB.z
                     };
                 },
                 'foldBDirection': (state, { dx, dy }) => {
@@ -175,27 +175,27 @@
                     axisA = rotateVectorAroundAxis(axisA, axisB, dx / 1000);
 
                     return {
-                        foldBX: foldVector.x - state.foldBX,
-                        foldBY: foldVector.y - state.foldBY,
-                        foldBZ: foldVector.z - state.foldBZ,
-                        foldBAxisAX: axisA.x - state.foldBAxisAX,
-                        foldBAxisAY: axisA.y - state.foldBAxisAY,
-                        foldBAxisAZ: axisA.z - state.foldBAxisAZ,
-                        foldBAxisBX: axisB.x - state.foldBAxisBX,
-                        foldBAxisBY: axisB.y - state.foldBAxisBY,
-                        foldBAxisBZ: axisB.z - state.foldBAxisBZ
+                        foldBX: foldVector.x,
+                        foldBY: foldVector.y,
+                        foldBZ: foldVector.z,
+                        foldBAxisAX: axisA.x,
+                        foldBAxisAY: axisA.y,
+                        foldBAxisAZ: axisA.z,
+                        foldBAxisBX: axisB.x,
+                        foldBAxisBY: axisB.y,
+                        foldBAxisBZ: axisB.z
                     };
                 },
                 'translateXY': (state, { dx, dy }) => {
                     return {
-                        translateX: -dx / 100,
-                        translateY: dy / 100
+                        translateX: state.translateX - dx / 100,
+                        translateY: state.translateY + dy / 100
                     };
                 },
                 'translateXZ': (state, { dx, dy }) => {
                     return {
-                        translateX: -dx / 100,
-                        translateZ: dy / 100
+                        translateX: state.translateX - dx / 100,
+                        translateZ: state.translateZ + dy / 100
                     };
                 }
             }

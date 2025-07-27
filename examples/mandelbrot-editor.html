@@ -67,10 +67,10 @@
                     const cos = Math.cos(rotation);
                     const sin = Math.sin(rotation);
                     return {
-                        x: dx * cos - dy * sin,
-                        y: dx * sin + dy * cos,
-                        zoomLog: -sdy * 0.003,
-                        rotation: -sdx * 0.002
+                        x: state.x + dx * cos - dy * sin,
+                        y: state.y + dx * sin + dy * cos,
+                        zoomLog: state.zoomLog - sdy * 0.003,
+                        rotation: state.rotation - sdx * 0.002
                     };
                 },
                 'z0-modify': (state, { dx, dy }) => {
@@ -80,8 +80,8 @@
                     const cos = Math.cos(state.rotation);
                     const sin = Math.sin(state.rotation);
                     return {
-                        z0x: dx * cos - dy * sin,
-                        z0y: dx * sin + dy * cos
+                        z0x: state.z0x + dx * cos - dy * sin,
+                        z0y: state.z0y + dx * sin + dy * cos
                     };
                 },
                 'exp-modify': (state, { dx, dy }) => {
@@ -91,8 +91,8 @@
                     const cos = Math.cos(state.rotation);
                     const sin = Math.sin(state.rotation);
                     return {
-                        expx: dx * cos - dy * sin,
-                        expy: dx * sin + dy * cos
+                        expx: state.expx + dx * cos - dy * sin,
+                        expy: state.expy + dx * sin + dy * cos
                     };
                 },
                 'exp2-modify': (state, { dx, dy }) => {
@@ -102,29 +102,29 @@
                     const cos = Math.cos(state.rotation);
                     const sin = Math.sin(state.rotation);
                     return {
-                        exp2x: dx * cos - dy * sin,
-                        exp2y: dx * sin + dy * cos
+                        exp2x: state.exp2x + dx * cos - dy * sin,
+                        exp2y: state.exp2y + dx * sin + dy * cos
                     };
                 },
                 'color': (state, { dx, dy }) => {
                     return {
-                        colorScale: dx * 0.001,
-                        colorOffset: dy * 0.001
+                        colorScale: state.colorScale + dx * 0.001,
+                        colorOffset: state.colorOffset + dy * 0.001
                     };
                 },
                 'iteration-angle-color': (state, { dx, dy, sdx, sdy }) => {
                     return {
-                        angle_chroma_offset: dx * 0.01,
-                        angle_chroma_tightness: dy * 0.01,
-                        angle_hue: sdx * 0.01,
+                        angle_chroma_offset: state.angle_chroma_offset + dx * 0.01,
+                        angle_chroma_tightness: state.angle_chroma_tightness + dy * 0.01,
+                        angle_hue: state.angle_hue + sdx * 0.01,
                         // angle_saturation: sdy * 0.01
                     };
                 },
                 'iteration-distance-color': (state, { dx, dy, sdx, sdy }) => {
                     return {
-                        distance_chroma_offset: dx * 0.01,
-                        distance_chroma_tightness: dy * 0.01,
-                        distance_hue: sdx * 0.01,
+                        distance_chroma_offset: state.distance_chroma_offset + dx * 0.01,
+                        distance_chroma_tightness: state.distance_chroma_tightness + dy * 0.01,
+                        distance_hue: state.distance_hue + sdx * 0.01,
                         // distance_saturation: sdy * 0.01
                     };
                 },
