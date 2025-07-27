@@ -146,7 +146,7 @@
         });
 
         const canvas = document.querySelector('#canvas');
-        const gl = canvas.getContext('webgl');
+        const gl = canvas.getContext('webgl', { preserveDrawingBuffer: true });
 
         if (!gl) {
             alert('WebGL not supported');
@@ -373,6 +373,48 @@
                 } else {
                     document.exitFullscreen()
                 }
+            } else if (event.key === 'e' || event.key === 'E') {
+                event.preventDefault();
+                // Save screenshot from WebGL context
+                const width = canvas.width;
+                const height = canvas.height;
+                const pixels = new Uint8Array(width * height * 4);
+                gl.readPixels(0, 0, width, height, gl.RGBA, gl.UNSIGNED_BYTE, pixels);
+
+                // Create a new canvas to convert the image
+                const screenshotCanvas = document.createElement('canvas');
+                screenshotCanvas.width = width;
+                screenshotCanvas.height = height;
+                const ctx = screenshotCanvas.getContext('2d');
+
+                // Create ImageData and flip vertically (WebGL coordinates are flipped)
+                const imageData = ctx.createImageData(width, height);
+                for (let y = 0; y < height; y++) {
+                    for (let x = 0; x < width; x++) {
+                        const srcIndex = (y * width + x) * 4;
+                        const dstIndex = ((height - 1 - y) * width + x) * 4;
+                        imageData.data[dstIndex] = pixels[srcIndex];     // R
+                        imageData.data[dstIndex + 1] = pixels[srcIndex + 1]; // G
+                        imageData.data[dstIndex + 2] = pixels[srcIndex + 2]; // B
+                        imageData.data[dstIndex + 3] = pixels[srcIndex + 3]; // A
+                    }
+                }
+
+                ctx.putImageData(imageData, 0, 0);
+                const dataURL = screenshotCanvas.toDataURL('image/png');
+
+                const now = new Date();
+                const year = now.getFullYear();
+                const month = String(now.getMonth() + 1).padStart(2, '0');
+                const day = String(now.getDate()).padStart(2, '0');
+                const hour = String(now.getHours()).padStart(2, '0');
+                const minute = String(now.getMinutes()).padStart(2, '0');
+                const second = String(now.getSeconds()).padStart(2, '0');
+                // format: mandelbrot_2025-07-15_12-34-56.png
+                const link = document.createElement('a');
+                link.download = `mandelbrot_${year}-${month}-${day}_${hour}-${minute}-${second}.png`;
+                link.href = dataURL;
+                link.click();
             }
         });
 
