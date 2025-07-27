@@ -217,7 +217,10 @@ export class PFExplorer {
     }
 
     private exportParameters(): void {
-        const dataStr = JSON.stringify(this.parameters, null, 2);
+        const data = {
+            variables: this.parameters,
+        };
+        const dataStr = JSON.stringify(data, null, 2);
         const dataBlob = new Blob([dataStr], { type: 'application/json' });
 
         const link = document.createElement('a');
@@ -246,10 +249,16 @@ export class PFExplorer {
                 const reader = new FileReader();
                 reader.onload = (e) => {
                     try {
-                        const animationData = JSON.parse(e.target?.result as string);
-                        this.loadParameters(animationData);
+                        const data = JSON.parse(e.target?.result as string);
+                        if (data.variables) {
+                            this.loadParameters(data.variables);
+                        } else if (data.parameters) {
+                            console.error('PFExplorer does not support PFAnimation format');
+                        } else {
+                            console.error('Invalid file format (no `variables` key)');
+                        }
                     } catch (error) {
-                        console.error('Failed to parse animation file:', error);
+                        console.error('Invalid file format (JSON decode error)');
                     }
                 };
                 reader.readAsText(file);
