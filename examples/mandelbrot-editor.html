@@ -429,7 +429,8 @@
             // 2. Create a new MediaRecorder and record the canvas
             const stream = canvas.captureStream(30); // 30 FPS
             mediaRecorder = new MediaRecorder(stream, {
-                mimeType: 'video/webm;codecs=vp9'
+                mimeType: 'video/webm;codecs=vp9',
+                videoBitsPerSecond: 16000000,
             });
 
             recordedChunks = [];
