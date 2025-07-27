@@ -77,33 +77,27 @@
                     const zoom = Math.pow(2, state.zoomLog);
                     dx *= 0.001 / zoom;
                     dy *= -0.001 / zoom;
-                    const cos = Math.cos(state.rotation);
-                    const sin = Math.sin(state.rotation);
                     return {
-                        z0x: state.z0x + dx * cos - dy * sin,
-                        z0y: state.z0y + dx * sin + dy * cos
+                        z0x: state.z0x + dx,
+                        z0y: state.z0y + dy
                     };
                 },
                 'exp-modify': (state, { dx, dy }) => {
                     const zoom = Math.pow(2, state.zoomLog);
                     dx *= 0.001 / zoom;
                     dy *= -0.001 / zoom;
-                    const cos = Math.cos(state.rotation);
-                    const sin = Math.sin(state.rotation);
                     return {
-                        expx: state.expx + dx * cos - dy * sin,
-                        expy: state.expy + dx * sin + dy * cos
+                        expx: state.expx + dx,
+                        expy: state.expy + dy
                     };
                 },
                 'exp2-modify': (state, { dx, dy }) => {
                     const zoom = Math.pow(2, state.zoomLog);
                     dx *= 0.001 / zoom;
                     dy *= -0.001 / zoom;
-                    const cos = Math.cos(state.rotation);
-                    const sin = Math.sin(state.rotation);
                     return {
-                        exp2x: state.exp2x + dx * cos - dy * sin,
-                        exp2y: state.exp2y + dx * sin + dy * cos
+                        exp2x: state.exp2x + dx,
+                        exp2y: state.exp2y + dy
                     };
                 },
                 'color': (state, { dx, dy }) => {
