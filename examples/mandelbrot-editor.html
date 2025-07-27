@@ -32,10 +32,10 @@
 <body>
     <canvas id="canvas" width="1080" height="1080"></canvas>
     <script>
-        const { PFExplorer } = ParameterFlow;
+        const { PFEditor } = ParameterFlow;
 
-        const editor = new PFExplorer({
-            duration: 15,
+        const editor = new PFEditor({
+            duration: 10,
             variables: {
                 x: 0,
                 y: 0,
@@ -409,6 +409,67 @@
                 link.download = `mandelbrot_${year}-${month}-${day}_${hour}-${minute}-${second}.png`;
                 link.href = dataURL;
                 link.click();
+            } else if (event.key === 'r' || event.key === 'R') {
+                event.preventDefault();
+                recordAnimation();
+            }
+        });
+
+        // Recording functionality
+        let mediaRecorder = null;
+        let recordedChunks = [];
+
+        function recordAnimation() {
+            // 1. Go to time zero
+            editor.seek(0);
+
+            // 2. Create a new MediaRecorder and record the canvas
+            const stream = canvas.captureStream(30); // 30 FPS
+            mediaRecorder = new MediaRecorder(stream, {
+                mimeType: 'video/webm;codecs=vp9'
+            });
+
+            recordedChunks = [];
+
+            mediaRecorder.ondataavailable = (event) => {
+                if (event.data.size > 0) {
+                    recordedChunks.push(event.data);
+                }
+            };
+
+            mediaRecorder.onstop = () => {
+                // 4. When recording stops, save it to a file
+                const blob = new Blob(recordedChunks, { type: 'video/webm' });
+                const url = URL.createObjectURL(blob);
+
+                const now = new Date();
+                const year = now.getFullYear();
+                const month = String(now.getMonth() + 1).padStart(2, '0');
+                const day = String(now.getDate()).padStart(2, '0');
+                const hour = String(now.getHours()).padStart(2, '0');
+                const minute = String(now.getMinutes()).padStart(2, '0');
+                const second = String(now.getSeconds()).padStart(2, '0');
+
+                const link = document.createElement('a');
+                link.download = `mandelbrot_${year}-${month}-${day}_${hour}-${minute}-${second}.webm`;
+                link.href = url;
+                link.click();
+
+                URL.revokeObjectURL(url);
+            };
+
+            // Start recording
+            mediaRecorder.start();
+
+            // 3. Do play
+            editor.play();
+        }
+
+        // Add event listener for end event to stop recording
+        editor.addEventListener('end', () => {
+            console.log('end');
+            if (mediaRecorder && mediaRecorder.state === 'recording') {
+                mediaRecorder.stop();
             }
         });
 

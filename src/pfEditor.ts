@@ -208,6 +208,18 @@ export class PFEditor {
         return this.timelinePlayer.element;
     }
 
+    public seek(time: number): void {
+        this.timelinePlayer.seek(time);
+    }
+
+    public play(): void {
+        this.timelinePlayer.play();
+    }
+
+    public pause(): void {
+        this.timelinePlayer.pause();
+    }
+
     public addEventListener(event: string, handler: (...args: any[]) => void): void {
         this.timelinePlayer.addEventListener(event, handler);
     }
