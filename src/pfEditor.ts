@@ -337,6 +337,7 @@ export class PFEditor {
     }
 
     private loadAnimation(parameters?: Record<string, ParameterKeyframe[]>): void {
+        console.debug('Loading animation...');
         let keyframes: Record<string, ParameterKeyframe[]> = {};
         for (const [key, value] of Object.entries(this._initialValues)) {
             keyframes[key] = [{ time: 0, value }];
@@ -344,14 +345,19 @@ export class PFEditor {
 
         if (parameters) {
             // Clean up ghost parameters from other projects
-            for (const key of Object.keys(this._initialValues)) {
-                if (parameters[key]) {
+            for (const key of Object.keys(parameters)) {
+                if (key in this._initialValues) {
                     keyframes[key] = parameters[key];
+                    console.debug('Loaded parameter:', key);
+                } else {
+                    console.debug('Skipping undefined parameter:', key);
                 }
             }
         }
 
         this.animation = new PFAnimation(keyframes);
+
+        console.debug('Animation loaded');
     }
 
     private loadAnimationData(animationData: any): void {
