@@ -360,6 +360,9 @@
         gl.viewport(0, 0, canvas.width, canvas.height);
 
         document.addEventListener('keydown', (event) => {
+            if (event.altKey || event.ctrlKey || event.metaKey || event.shiftKey) {
+                return;
+            }
             if (event.key === 'f' || event.key === 'F') {
                 event.preventDefault();
                 if (!document.fullscreenElement) {
