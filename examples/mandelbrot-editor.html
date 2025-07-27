@@ -115,7 +115,7 @@
                 'iteration-angle-color': (state, { dx, dy, sdx, sdy }) => {
                     return {
                         angle_chroma_offset: state.angle_chroma_offset + dx * 0.01,
-                        angle_chroma_tightness: state.angle_chroma_tightness + dy * 0.01,
+                        angle_chroma_tightness: state.angle_chroma_tightness + dy * 0.001,
                         angle_hue: state.angle_hue + sdx * 0.01,
                         // angle_saturation: sdy * 0.01
                     };
@@ -123,7 +123,7 @@
                 'iteration-distance-color': (state, { dx, dy, sdx, sdy }) => {
                     return {
                         distance_chroma_offset: state.distance_chroma_offset + dx * 0.01,
-                        distance_chroma_tightness: state.distance_chroma_tightness + dy * 0.01,
+                        distance_chroma_tightness: state.distance_chroma_tightness + dy * 0.001,
                         distance_hue: state.distance_hue + sdx * 0.01,
                         // distance_saturation: sdy * 0.01
                     };
@@ -254,7 +254,7 @@
                         }
                     }
 
-                    if(dot(z, z) > 4.0) {
+                    if(dot(z, z) > 10000.0) {
                         i = j;
                         is_inside = false;
                         break;
