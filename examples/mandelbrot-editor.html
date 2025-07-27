@@ -111,7 +111,7 @@
                         angle_chroma_offset: state.angle_chroma_offset + dx * 0.01,
                         angle_chroma_tightness: state.angle_chroma_tightness + dy * 0.001,
                         angle_hue: state.angle_hue + sdx * 0.01,
-                        // angle_saturation: sdy * 0.01
+                        // angle_saturation: state.angle_saturation + sdy * 0.01
                     };
                 },
                 'iteration-distance-color': (state, { dx, dy, sdx, sdy }) => {
@@ -119,7 +119,7 @@
                         distance_chroma_offset: state.distance_chroma_offset + dx * 0.01,
                         distance_chroma_tightness: state.distance_chroma_tightness + dy * 0.001,
                         distance_hue: state.distance_hue + sdx * 0.01,
-                        // distance_saturation: sdy * 0.01
+                        // distance_saturation: state.distance_saturation + sdy * 0.01
                     };
                 },
             }
