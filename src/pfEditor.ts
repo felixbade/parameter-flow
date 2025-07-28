@@ -204,6 +204,10 @@ export class PFEditor {
         return this.timelinePlayer.currentTime;
     }
 
+    public get duration(): number {
+        return this.timelinePlayer.duration;
+    }
+
     public get element(): HTMLDivElement {
         return this.timelinePlayer.element;
     }
