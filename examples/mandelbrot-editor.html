@@ -421,13 +421,15 @@
         // Recording functionality
         let mediaRecorder = null;
         let recordedChunks = [];
+        let isRecording = false;
+        let recordingStartTime = 0;
+        const RECORDING_FPS = 60;
+        const FRAME_DURATION = 1 / RECORDING_FPS;
 
         function recordAnimation() {
-            // 1. Go to time zero
             editor.seek(0);
 
-            // 2. Create a new MediaRecorder and record the canvas
-            const stream = canvas.captureStream(30); // 30 FPS
+            const stream = canvas.captureStream(RECORDING_FPS);
             mediaRecorder = new MediaRecorder(stream, {
                 mimeType: 'video/webm;codecs=vp9',
                 videoBitsPerSecond: 16000000,
@@ -462,22 +464,38 @@
                 URL.revokeObjectURL(url);
             };
 
-            // Start recording
             mediaRecorder.start();
+            isRecording = true;
+            recordingStartTime = performance.now();
 
-            // 3. Do play
-            editor.play();
+            recordNextFrame();
         }
 
-        // Add event listener for end event to stop recording
-        editor.addEventListener('end', () => {
-            console.log('end');
-            if (mediaRecorder && mediaRecorder.state === 'recording') {
-                mediaRecorder.stop();
-            }
-        });
+        function recordNextFrame() {
+            if (!isRecording) return;
 
-        const render = () => {
+            const targetTime = editor.currentTime + FRAME_DURATION;
+
+            editor.seek(targetTime);
+            render(false);
+            // needed for faster than real-time rendering
+            mediaRecorder.requestData();
+            // mediaRecorder.requestData();
+
+            if (targetTime >= editor.duration) {
+                isRecording = false;
+                if (mediaRecorder && mediaRecorder.state === 'recording') {
+                    mediaRecorder.stop();
+                }
+                requestAnimationFrame(render);
+                return;
+            }
+
+            // Schedule the next frame after the frame duration
+            requestAnimationFrame(recordNextFrame);
+        }
+
+        const render = (recursive = true) => {
             gl.useProgram(program);
 
             const { x, y, zoomLog, rotation, z0x, z0y, expx, expy, exp2x, exp2y, colorScale, colorOffset, angle_chroma_offset, angle_chroma_tightness, angle_hue, angle_saturation, distance_chroma_offset, distance_chroma_tightness, distance_hue, distance_saturation } = editor.getCurrentValues();
@@ -511,7 +529,11 @@
             // Draw
             gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
 
-            requestAnimationFrame(render);
+            gl.finish();
+
+            if (recursive && !isRecording) {
+                requestAnimationFrame(() => render());
+            }
         };
         render();
     </script>
