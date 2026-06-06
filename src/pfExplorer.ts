@@ -448,6 +448,7 @@ export class PFExplorer {
                 row.style.fontFamily = 'ui-monospace, monospace';
                 row.style.whiteSpace = 'pre';
                 row.style.opacity = '0.9';
+                row.style.color = this._seededKeys.has(key) ? 'hsl(0, 0%, 50%)' : 'hsl(0, 0%, 100%)';
                 row.textContent = `${key}  ${this._formatValue(this._overrides[key])}`;
                 section.appendChild(row);
             }
