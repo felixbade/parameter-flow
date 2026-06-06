@@ -10,7 +10,7 @@ interface Parameters {
 }
 
 export interface NotifyEvent {
-    type: 'export' | 'import' | 'reset' | 'error';
+    type: 'export' | 'import' | 'reset' | 'error' | 'handler';
     ok: boolean;
     message: string;
 }
@@ -30,6 +30,7 @@ export class PFExplorer {
     private _mouseMoveHandler: ((event: MouseEvent) => void) | null;
     private _wheelHandler: ((event: WheelEvent) => void) | null;
     private _keyboardListener: ((event: KeyboardEvent) => void) | null;
+    private _pointerLockChangeHandler: (() => void) | null;
     private currentHandlerIndex: number;
     private handlerNames: string[];
     private _beforeUnloadHandler: (() => void) | null;
@@ -58,6 +59,7 @@ export class PFExplorer {
         this._mouseMoveHandler = null;
         this._wheelHandler = null;
         this._keyboardListener = null;
+        this._pointerLockChangeHandler = null;
         this._beforeUnloadHandler = null;
         this._isFirstMouseMove = true;
         this._useClipboard = config.clipboard === true;
@@ -84,17 +86,17 @@ export class PFExplorer {
             } else if (event.key === 'ArrowUp') {
                 event.preventDefault();
                 this.currentHandlerIndex = (this.currentHandlerIndex - 1 + this.handlerNames.length) % this.handlerNames.length;
-                console.log('Active handler:', this.handlerNames[this.currentHandlerIndex]);
+                this.notifyActiveHandler();
             } else if (event.key === 'ArrowDown') {
                 event.preventDefault();
                 this.currentHandlerIndex = (this.currentHandlerIndex + 1) % this.handlerNames.length;
-                console.log('Active handler:', this.handlerNames[this.currentHandlerIndex]);
+                this.notifyActiveHandler();
             } else if (event.key >= '1' && event.key <= '9') {
                 event.preventDefault();
                 const handlerIndex = parseInt(event.key) - 1;
                 if (handlerIndex < this.handlerNames.length) {
                     this.currentHandlerIndex = handlerIndex;
-                    console.log('Active handler:', this.handlerNames[this.currentHandlerIndex]);
+                    this.notifyActiveHandler();
                 }
             } else if (event.key === 'e' || event.key === 'E') {
                 event.preventDefault();
@@ -175,6 +177,14 @@ export class PFExplorer {
         }).bind(this);
 
         document.addEventListener('wheel', this._wheelHandler);
+
+        this._pointerLockChangeHandler = (() => {
+            if (document.pointerLockElement) {
+                this.notifyActiveHandler();
+            }
+        }).bind(this);
+
+        document.addEventListener('pointerlockchange', this._pointerLockChangeHandler);
     }
 
     private resetEditingParameters(): void {
@@ -227,6 +237,10 @@ export class PFExplorer {
             window.removeEventListener('keydown', this._keyboardListener);
             this._keyboardListener = null;
         }
+        if (this._pointerLockChangeHandler) {
+            document.removeEventListener('pointerlockchange', this._pointerLockChangeHandler);
+            this._pointerLockChangeHandler = null;
+        }
         if (this._beforeUnloadHandler) {
             window.removeEventListener('beforeunload', this._beforeUnloadHandler);
             this._beforeUnloadHandler = null;
@@ -239,6 +253,18 @@ export class PFExplorer {
             this._toastElement.parentNode.removeChild(this._toastElement);
         }
         this._toastElement = null;
+    }
+
+    private notifyActiveHandler(): void {
+        if (this.handlerNames.length === 0) {
+            return;
+        }
+        if (this.currentHandlerIndex < 0 || this.currentHandlerIndex >= this.handlerNames.length) {
+            return;
+        }
+        const handlerName = this.handlerNames[this.currentHandlerIndex];
+        console.log('Active handler:', handlerName);
+        this.emitNotify({ type: 'handler', ok: true, message: `Editing ${handlerName}` });
     }
 
     private emitNotify(event: NotifyEvent): void {
