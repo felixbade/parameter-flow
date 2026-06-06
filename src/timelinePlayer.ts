@@ -4,6 +4,7 @@ interface TimelinePlayerConfig {
     duration: number;
     bpm?: number;
     keyboardListener?: boolean;
+    storageKey?: string;
 }
 
 export class TimelinePlayer extends Player {
@@ -14,6 +15,9 @@ export class TimelinePlayer extends Player {
     private _handleMouseMove: ((event: MouseEvent) => void) | null;
     private _handleMouseUp: (() => void) | null;
     private _isDragging: boolean;
+    private _storageKey: string;
+    private _persistHandler: (() => void) | null;
+    private _beforeUnloadHandler: (() => void) | null;
 
     constructor(config: TimelinePlayerConfig = { duration: 10 }) {
         super(config);
@@ -22,6 +26,9 @@ export class TimelinePlayer extends Player {
         this._handleMouseMove = null;
         this._handleMouseUp = null;
         this._isDragging = false;
+        this._storageKey = config.storageKey || 'pf-timeline-current-time';
+        this._persistHandler = null;
+        this._beforeUnloadHandler = null;
 
         if (config.keyboardListener !== false) {
             this._setupKeyboardListener();
@@ -75,6 +82,52 @@ export class TimelinePlayer extends Player {
 
         this._animate = this._animate.bind(this);
         this._animate();
+
+        this._setupPersistence();
+    }
+
+    private _setupPersistence(): void {
+        const savedTime = this._loadCurrentTime();
+        if (savedTime !== null) {
+            this.seek(savedTime);
+        }
+
+        this._persistHandler = (() => {
+            this._saveCurrentTime();
+        }).bind(this);
+        this.addEventListener('pause', this._persistHandler);
+        this.addEventListener('seek', this._persistHandler);
+        this.addEventListener('end', this._persistHandler);
+
+        // capture position even while playing (e.g. refresh mid-playback)
+        this._beforeUnloadHandler = (() => {
+            this._saveCurrentTime();
+        }).bind(this);
+        window.addEventListener('beforeunload', this._beforeUnloadHandler);
+    }
+
+    private _saveCurrentTime(): void {
+        try {
+            localStorage.setItem(this._storageKey, this.currentTime.toString());
+        } catch (error) {
+            console.error('Failed to save timeline current time to localStorage:', error);
+        }
+    }
+
+    private _loadCurrentTime(): number | null {
+        try {
+            const savedTime = localStorage.getItem(this._storageKey);
+            if (savedTime === null) {
+                return null;
+            }
+            const time = parseFloat(savedTime);
+            if (!isNaN(time) && time >= 0 && time <= this.duration) {
+                return time;
+            }
+        } catch (error) {
+            console.error('Failed to load timeline current time from localStorage:', error);
+        }
+        return null;
     }
 
     private _animate(): void {
@@ -121,6 +174,15 @@ export class TimelinePlayer extends Player {
             window.removeEventListener('mouseup', this._handleMouseUp);
             this._handleMouseUp = null;
         }
-
+        if (this._persistHandler) {
+            this.removeEventListener('pause', this._persistHandler);
+            this.removeEventListener('seek', this._persistHandler);
+            this.removeEventListener('end', this._persistHandler);
+            this._persistHandler = null;
+        }
+        if (this._beforeUnloadHandler) {
+            window.removeEventListener('beforeunload', this._beforeUnloadHandler);
+            this._beforeUnloadHandler = null;
+        }
     }
 }

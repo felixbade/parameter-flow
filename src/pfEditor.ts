@@ -28,7 +28,6 @@ export class PFEditor {
     private _keyboardListener: ((event: KeyboardEvent) => void) | null;
     private currentHandlerIndex: number;
     private handlerNames: string[];
-    private _beforeUnloadHandler: (() => void) | null;
     private _initialValues: Record<string, number>;
     private _isFirstMouseMove: boolean;
 
@@ -47,21 +46,14 @@ export class PFEditor {
         this.handlerNames = Object.keys(config.handlers);
         this.currentHandlerIndex = 0;
 
-        this.timelinePlayer = new TimelinePlayer(config);
-
-        const savedTime = this.loadCurrentTimeFromLocalStorage();
-        if (savedTime !== null) {
-            this.timelinePlayer.seek(savedTime);
-        }
+        this.timelinePlayer = new TimelinePlayer({ ...config, storageKey: 'pf-editor-current-time' });
 
         this._mouseMoveHandler = null;
         this._wheelHandler = null;
         this._keyboardListener = null;
-        this._beforeUnloadHandler = null;
         this._isFirstMouseMove = true;
 
         this._setupPointerLockListener();
-        this._setupEventListeners();
 
         if (config.keyboardListener !== false) {
             this._setupKeyboardListener();
@@ -181,21 +173,6 @@ export class PFEditor {
         document.addEventListener('wheel', this._wheelHandler);
     }
 
-    private _setupEventListeners(): void {
-        this.timelinePlayer.addEventListener('pause', () => {
-            this.saveCurrentTimeToLocalStorage();
-        });
-
-        this.timelinePlayer.addEventListener('seek', () => {
-            this.saveCurrentTimeToLocalStorage();
-        });
-
-        this._beforeUnloadHandler = () => {
-            this.saveCurrentTimeToLocalStorage();
-        };
-        window.addEventListener('beforeunload', this._beforeUnloadHandler);
-    }
-
     public getCurrentValues(): Record<string, number> {
         return this.animation.getValuesAt(this.timelinePlayer.currentTime);
     }
@@ -240,10 +217,6 @@ export class PFEditor {
         if (this._keyboardListener) {
             window.removeEventListener('keydown', this._keyboardListener);
             this._keyboardListener = null;
-        }
-        if (this._beforeUnloadHandler) {
-            window.removeEventListener('beforeunload', this._beforeUnloadHandler);
-            this._beforeUnloadHandler = null;
         }
         this.timelinePlayer.destroy();
     }
@@ -435,21 +408,6 @@ export class PFEditor {
             } catch (error) {
                 console.error('Failed to parse saved animation data from localStorage:', error);
                 return null;
-            }
-        }
-        return null;
-    }
-
-    private saveCurrentTimeToLocalStorage(): void {
-        localStorage.setItem('pf-editor-current-time', this.timelinePlayer.currentTime.toString());
-    }
-
-    private loadCurrentTimeFromLocalStorage(): number | null {
-        const savedTime = localStorage.getItem('pf-editor-current-time');
-        if (savedTime) {
-            const time = parseFloat(savedTime);
-            if (!isNaN(time) && time >= 0 && time <= this.timelinePlayer.duration) {
-                return time;
             }
         }
         return null;
