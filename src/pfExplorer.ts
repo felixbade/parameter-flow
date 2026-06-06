@@ -18,17 +18,17 @@ export interface PFExplorerConfig {
 const ZERO_INPUT: HandlerInput = { dx: 0, dy: 0, sdx: 0, sdy: 0 };
 
 export class PFExplorer {
-    private readonly handlers: Record<string, Handler>;
+    private handlers: Record<string, Handler>;
     private readonly getState: () => Record<string, unknown>;
-    private readonly handlerKeys: Record<string, string[]>;
-    private readonly handlerInputs: Record<string, { mouse: boolean; scroll: boolean }>;
+    private handlerKeys: Record<string, string[]>;
+    private handlerInputs: Record<string, { mouse: boolean; scroll: boolean }>;
     private _overrides: Record<string, unknown>;
     private _mouseMoveHandler: ((event: MouseEvent) => void) | null;
     private _wheelHandler: ((event: WheelEvent) => void) | null;
     private _keyboardListener: ((event: KeyboardEvent) => void) | null;
     private _pointerLockChangeHandler: (() => void) | null;
     private currentHandlerIndex: number;
-    private readonly handlerNames: string[];
+    private handlerNames: string[];
     private _isFirstMouseMove: boolean;
     private _cardElement: HTMLDivElement | null;
     private _transientMessage: string | null;
@@ -64,6 +64,29 @@ export class PFExplorer {
 
     public getOverrides(): Readonly<Record<string, unknown>> {
         return this._overrides;
+    }
+
+    // Swap the live handler set at runtime (e.g. when the active mode changes).
+    // The card and keyboard navigation re-scope to the new handlers, but the
+    // user's edited overrides persist and re-apply when a handler returns.
+    public setHandlers(handlers: Record<string, Handler>): void {
+        this.handlers = handlers;
+        this.handlerNames = Object.keys(handlers);
+        this.handlerKeys = this._buildHandlerKeys();
+        this.handlerInputs = this._buildHandlerInputs();
+
+        this._clearSeeded();
+
+        this.currentHandlerIndex =
+            this.handlerNames.length === 0
+                ? 0
+                : Math.min(this.currentHandlerIndex, this.handlerNames.length - 1);
+
+        if (document.pointerLockElement) {
+            this._seedActiveHandler();
+        } else {
+            this._refreshCard();
+        }
     }
 
     public destroy(): void {
@@ -305,8 +328,19 @@ export class PFExplorer {
     }
 
     private async _copyOverrides(): Promise<void> {
+        // Only export keys controlled by the currently visible handlers; overrides
+        // held in memory for other (swapped-out) handler sets are trimmed.
+        const visibleKeys = new Set<string>();
+        for (const name of this.handlerNames) {
+            for (const key of this.handlerKeys[name] ?? []) {
+                visibleKeys.add(key);
+            }
+        }
         const rounded: Record<string, unknown> = {};
         for (const [key, value] of Object.entries(this._overrides)) {
+            if (!visibleKeys.has(key)) {
+                continue;
+            }
             rounded[key] = this._round(value);
         }
         const dataStr = JSON.stringify(rounded, null, 2);

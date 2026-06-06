@@ -80,11 +80,16 @@ new PFExplorer(config);
 ### Methods
 
 ```ts
-getOverrides(): Readonly<Record<string, unknown>>; // edited keys only
-destroy(): void;                                   // remove listeners + DOM
+getOverrides(): Readonly<Record<string, unknown>>;     // edited keys only
+setHandlers(handlers: Record<string, Handler>): void;  // swap the live handler set
+destroy(): void;                                       // remove listeners + DOM
 ```
 
 Edited keys are `Object.keys(getOverrides())`; there is no separate accessor.
+
+#### `setHandlers`
+
+Swaps the live handler set at runtime, e.g. when changing scenes. Modified parameters persist, but in export they are trimmed based on the currently visible handlers.
 
 
 ### Keyboard
@@ -107,4 +112,6 @@ Flat JSON of the current overrides, no wrapper:
 
 The explorer does not namespace; the paste destination decides how to use the
 keys.
+
+Only keys controlled by the currently visible handlers are exported.
 
