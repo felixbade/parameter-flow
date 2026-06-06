@@ -42,7 +42,7 @@ A single in-memory store:
 _overrides: Record<string, unknown>; // only keys the user has edited
 ```
 
-Pull model: the explorer calls `getState()` when editing starts. Backspace clears the overrides that the current handler modifies (calls it with a zero input and checks the keys that the handler returns).
+Pull model: the explorer calls `getState()` when editing starts. A key becomes edited (enters `_overrides`) only on the **first mouse/wheel input** for the active handler — entering pointer lock and browsing handlers marks nothing. Backspace clears the overrides that the current handler modifies (calls it with a zero input and checks the keys that the handler returns).
 
 ## Out of scope
 
@@ -88,7 +88,7 @@ Edited keys are `Object.keys(getOverrides())`; there is no separate accessor.
 
 ```ts
 interface NotifyEvent {
-  type: 'copy' | 'reset' | 'handler' | 'error';
+  type: 'reset' | 'error';
   ok: boolean;
   message: string;
 }
@@ -98,10 +98,10 @@ interface NotifyEvent {
 
 | Key          | Action                                                      |
 | ------------ | ---------------------------------------------------------- |
-| Enter        | toggle pointer lock; on lock, seed the active handler      |
-| ArrowUp/Down | cycle the active handler (re-seeds while locked)           |
-| 1–9          | select a handler by index (re-seeds while locked)          |
-| E            | copy overrides to the clipboard as flat JSON               |
+| Enter        | toggle pointer lock                                        |
+| ArrowUp/Down | cycle the active handler                                   |
+| 1–9          | select a handler by index                                 |
+| E            | copy overrides to the clipboard as flat JSON              |
 | Backspace    | clear the active handler's keys from the overrides         |
 
 ### Copy format
@@ -117,8 +117,9 @@ keys.
 
 ### Card
 
-A fixed overlay lists **every** handler as the spine of the card. Under each
-handler it shows rows **only for that handler's edited keys** — unedited keys are
-invisible, so a handler with no edits shows just its header. The active handler
-is highlighted. The card refreshes on pointer lock change, handler switch, edit
-apply, and Backspace.
+A fixed overlay (blurred background) lists **every** handler as the spine of the
+card. Under each handler it shows rows **only for that handler's edited keys** —
+unedited keys are invisible, so a handler with no edits shows just its header. The
+active handler name is highlighted in green. The card refreshes on pointer lock
+change, handler switch, edit apply, and Backspace. The title reads
+`press E to copy changes`, briefly flipping to `copied!` after a successful copy.

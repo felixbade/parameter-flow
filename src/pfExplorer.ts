@@ -41,6 +41,7 @@ export class PFExplorer {
     private _toastTimeout: ReturnType<typeof setTimeout> | null;
     private _cardElement: HTMLDivElement | null;
     private _copiedTimeout: ReturnType<typeof setTimeout> | null;
+    private _seededKeys: Set<string>;
 
     constructor(config: PFExplorerConfig) {
         this.handlers = config.handlers;
@@ -60,6 +61,7 @@ export class PFExplorer {
         this._toastTimeout = null;
         this._cardElement = null;
         this._copiedTimeout = null;
+        this._seededKeys = new Set();
 
         this._setupCard();
         this._setupPointerLockListener();
@@ -122,21 +124,33 @@ export class PFExplorer {
         return { ...this.getState(), ...this._overrides };
     }
 
+    // Seed the active handler's keys from getState into the overrides so their
+    // current values are visible. Seeded keys are tracked as unmodified and get
+    // dropped again on handler switch / lock exit unless the user edits them.
     private _seedActiveHandler(): void {
         const name = this.handlerNames[this.currentHandlerIndex];
-        const handler = this.handlers[name];
-        if (!handler) {
+        if (name === undefined) {
             return;
         }
-
         const base = this.getState();
-        const paramKeys = Object.keys(handler(this._mergedState(), ZERO_INPUT));
-        for (const key of paramKeys) {
+        for (const key of this.handlerKeys[name] ?? []) {
+            if (key in this._overrides) {
+                continue;
+            }
             if (key in base) {
                 this._overrides[key] = base[key];
+                this._seededKeys.add(key);
             }
         }
         this._refreshCard();
+    }
+
+    // Drop seeded-but-unmodified keys from the overrides.
+    private _clearSeeded(): void {
+        for (const key of this._seededKeys) {
+            delete this._overrides[key];
+        }
+        this._seededKeys.clear();
     }
 
     private _applyHandlerInput(input: HandlerInput): void {
@@ -153,6 +167,7 @@ export class PFExplorer {
         const delta = handler(this._mergedState(), input);
         for (const [key, value] of Object.entries(delta)) {
             this._overrides[key] = value;
+            this._seededKeys.delete(key);
         }
         this._refreshCard();
     }
@@ -161,8 +176,13 @@ export class PFExplorer {
         const name = this.handlerNames[this.currentHandlerIndex];
         for (const key of this.handlerKeys[name] ?? []) {
             delete this._overrides[key];
+            this._seededKeys.delete(key);
         }
-        this._refreshCard();
+        if (document.pointerLockElement) {
+            this._seedActiveHandler();
+        } else {
+            this._refreshCard();
+        }
     }
 
     private _setupKeyboardListener(): void {
@@ -207,6 +227,7 @@ export class PFExplorer {
     }
 
     private _onHandlerSwitch(): void {
+        this._clearSeeded();
         if (document.pointerLockElement) {
             this._seedActiveHandler();
         } else {
@@ -247,6 +268,7 @@ export class PFExplorer {
                 this._isFirstMouseMove = true;
                 this._seedActiveHandler();
             } else {
+                this._clearSeeded();
                 this.dismissToast();
             }
             this._refreshCard();
@@ -303,11 +325,11 @@ export class PFExplorer {
         card.style.fontFamily = 'system-ui, sans-serif';
         card.style.fontSize = '13px';
         card.style.lineHeight = '1.4';
-        card.style.color = '#fff';
-        card.style.background = 'rgba(0, 0, 0, 0.65)';
+        card.style.color = 'hsl(0, 0%, 100%)';
+        card.style.background = 'hsla(0, 0%, 0%, 0.65)';
         card.style.backdropFilter = 'blur(20px)';
         (card.style as any).webkitBackdropFilter = 'blur(20px)';
-        card.style.boxShadow = '0 2px 8px rgba(0, 0, 0, 0.3)';
+        card.style.boxShadow = '0 2px 8px hsla(0, 0%, 0%, 0.3)';
         card.style.minWidth = '200px';
         document.body.appendChild(card);
         this._cardElement = card;
@@ -344,11 +366,12 @@ export class PFExplorer {
 
             const header = document.createElement('div');
             const isActive = i === this.currentHandlerIndex;
+            const isEditing = isActive && document.pointerLockElement !== null;
             header.textContent = `${isActive ? '▶ ' : '  '}${name}`;
             header.style.fontFamily = 'ui-monospace, Menlo, monospace';
             header.style.whiteSpace = 'pre';
             header.style.fontWeight = isActive ? '600' : '400';
-            header.style.color = isActive ? '#4caf50' : '#fff';
+            header.style.color = isEditing ? 'hsl(120, 50%, 50%)' : 'hsl(0, 0%, 80%)';
             header.style.opacity = isActive ? '1' : '0.6';
             section.appendChild(header);
 
@@ -394,15 +417,15 @@ export class PFExplorer {
             toast.style.fontFamily = 'system-ui, sans-serif';
             toast.style.fontSize = '13px';
             toast.style.lineHeight = '1.2';
-            toast.style.color = '#fff';
-            toast.style.boxShadow = '0 2px 8px rgba(0, 0, 0, 0.3)';
+            toast.style.color = 'hsl(0, 0%, 100%)';
+            toast.style.boxShadow = '0 2px 8px hsla(0, 0%, 0%, 0.3)';
             document.body.appendChild(toast);
             this._toastElement = toast;
         }
 
         const toast = this._toastElement;
         toast.textContent = event.message;
-        toast.style.background = event.ok ? '#2e7d32' : '#c62828';
+        toast.style.background = event.ok ? 'hsl(123, 46%, 34%)' : 'hsl(0, 66%, 47%)';
 
         if (this._toastTimeout !== null) {
             clearTimeout(this._toastTimeout);
