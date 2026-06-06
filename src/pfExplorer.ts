@@ -328,6 +328,8 @@ export class PFExplorer {
             const header = document.createElement('div');
             const isActive = i === this.currentHandlerIndex;
             header.textContent = `${isActive ? '▶ ' : '  '}${name}`;
+            header.style.fontFamily = 'ui-monospace, monospace';
+            header.style.whiteSpace = 'pre';
             header.style.fontWeight = isActive ? '600' : '400';
             header.style.opacity = isActive ? '1' : '0.6';
             section.appendChild(header);
@@ -339,6 +341,8 @@ export class PFExplorer {
                 const row = document.createElement('div');
                 row.style.paddingLeft = '14px';
                 row.style.fontSize = '12px';
+                row.style.fontFamily = 'ui-monospace, monospace';
+                row.style.whiteSpace = 'pre';
                 row.style.opacity = '0.9';
                 row.textContent = `${key}  ${this._formatValue(this._overrides[key])}`;
                 section.appendChild(row);
