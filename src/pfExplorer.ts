@@ -61,41 +61,41 @@ export class PFExplorer {
 
     private _setupKeyboardListener(): void {
         const handleKeyPress = ((event: KeyboardEvent) => {
-            if (event.code === 'Enter') {
+            if (event.key === 'Enter') {
                 event.preventDefault();
                 if (document.pointerLockElement) {
                     document.exitPointerLock();
                 } else {
                     document.body.requestPointerLock();
                 }
-            } else if (event.code === 'ArrowUp') {
+            } else if (event.key === 'ArrowUp') {
                 event.preventDefault();
                 this.currentHandlerIndex = (this.currentHandlerIndex - 1 + this.handlerNames.length) % this.handlerNames.length;
                 console.log('Active handler:', this.handlerNames[this.currentHandlerIndex]);
-            } else if (event.code === 'ArrowDown') {
+            } else if (event.key === 'ArrowDown') {
                 event.preventDefault();
                 this.currentHandlerIndex = (this.currentHandlerIndex + 1) % this.handlerNames.length;
                 console.log('Active handler:', this.handlerNames[this.currentHandlerIndex]);
-            } else if (event.code >= 'Digit1' && event.code <= 'Digit9') {
+            } else if (event.key >= '1' && event.key <= '9') {
                 event.preventDefault();
-                const handlerIndex = parseInt(event.code.replace('Digit', '')) - 1;
+                const handlerIndex = parseInt(event.key) - 1;
                 if (handlerIndex < this.handlerNames.length) {
                     this.currentHandlerIndex = handlerIndex;
                     console.log('Active handler:', this.handlerNames[this.currentHandlerIndex]);
                 }
-            } else if (event.code === 'KeyE') {
+            } else if (event.key === 'e' || event.key === 'E') {
                 event.preventDefault();
                 if (document.pointerLockElement) {
                     document.exitPointerLock();
                 }
                 this.exportParameters();
-            } else if (event.code === 'KeyI') {
+            } else if (event.key === 'i' || event.key === 'I') {
                 event.preventDefault();
                 if (document.pointerLockElement) {
                     document.exitPointerLock();
                 }
                 this.importParameters();
-            } else if (event.code === 'Backspace') {
+            } else if (event.key === 'Backspace') {
                 event.preventDefault();
                 this.resetEditingParameters();
                 this.saveToLocalStorage();
