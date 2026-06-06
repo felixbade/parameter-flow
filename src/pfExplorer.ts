@@ -10,7 +10,7 @@ interface Handler {
 }
 
 export interface NotifyEvent {
-    type: 'copy' | 'reset' | 'handler' | 'error';
+    type: 'reset' | 'error';
     ok: boolean;
     message: string;
 }
@@ -40,6 +40,7 @@ export class PFExplorer {
     private _toastElement: HTMLDivElement | null;
     private _toastTimeout: ReturnType<typeof setTimeout> | null;
     private _cardElement: HTMLDivElement | null;
+    private _copiedTimeout: ReturnType<typeof setTimeout> | null;
 
     constructor(config: PFExplorerConfig) {
         this.handlers = config.handlers;
@@ -58,6 +59,7 @@ export class PFExplorer {
         this._toastElement = null;
         this._toastTimeout = null;
         this._cardElement = null;
+        this._copiedTimeout = null;
 
         this._setupCard();
         this._setupPointerLockListener();
@@ -91,6 +93,10 @@ export class PFExplorer {
         if (this._toastTimeout !== null) {
             clearTimeout(this._toastTimeout);
             this._toastTimeout = null;
+        }
+        if (this._copiedTimeout !== null) {
+            clearTimeout(this._copiedTimeout);
+            this._copiedTimeout = null;
         }
         if (this._toastElement?.parentNode) {
             this._toastElement.parentNode.removeChild(this._toastElement);
@@ -203,7 +209,6 @@ export class PFExplorer {
     private _onHandlerSwitch(): void {
         if (document.pointerLockElement) {
             this._seedActiveHandler();
-            this.notifyActiveHandler();
         } else {
             this._refreshCard();
         }
@@ -241,7 +246,6 @@ export class PFExplorer {
             if (document.pointerLockElement) {
                 this._isFirstMouseMove = true;
                 this._seedActiveHandler();
-                this.notifyActiveHandler();
             } else {
                 this.dismissToast();
             }
@@ -269,11 +273,22 @@ export class PFExplorer {
         const dataStr = JSON.stringify(rounded, null, 2);
         try {
             await navigator.clipboard.writeText(dataStr);
-            this.emitNotify({ type: 'copy', ok: true, message: 'Copied to clipboard' });
+            this._showCopied();
         } catch (error) {
             console.error('Failed to copy to clipboard:', error);
             this.emitNotify({ type: 'error', ok: false, message: 'Clipboard copy failed' });
         }
+    }
+
+    private _showCopied(): void {
+        if (this._copiedTimeout !== null) {
+            clearTimeout(this._copiedTimeout);
+        }
+        this._copiedTimeout = setTimeout(() => {
+            this._copiedTimeout = null;
+            this._refreshCard();
+        }, 1500);
+        this._refreshCard();
     }
 
     private _setupCard(): void {
@@ -284,12 +299,14 @@ export class PFExplorer {
         card.style.zIndex = '2147483646';
         card.style.pointerEvents = 'none';
         card.style.padding = '10px 14px';
-        card.style.borderRadius = '10px';
+        card.style.borderRadius = '14px';
         card.style.fontFamily = 'system-ui, sans-serif';
         card.style.fontSize = '13px';
         card.style.lineHeight = '1.4';
         card.style.color = '#fff';
-        card.style.background = 'rgba(0, 0, 0, 0.75)';
+        card.style.background = 'rgba(0, 0, 0, 0.65)';
+        card.style.backdropFilter = 'blur(20px)';
+        (card.style as any).webkitBackdropFilter = 'blur(20px)';
         card.style.boxShadow = '0 2px 8px rgba(0, 0, 0, 0.3)';
         card.style.minWidth = '200px';
         document.body.appendChild(card);
@@ -314,7 +331,7 @@ export class PFExplorer {
         card.replaceChildren();
 
         const title = document.createElement('div');
-        title.textContent = 'press E to copy changes';
+        title.textContent = this._copiedTimeout !== null ? 'copied!' : 'press E to copy changes';
         title.style.fontSize = '11px';
         title.style.opacity = '0.7';
         title.style.marginBottom = '8px';
@@ -328,9 +345,10 @@ export class PFExplorer {
             const header = document.createElement('div');
             const isActive = i === this.currentHandlerIndex;
             header.textContent = `${isActive ? '▶ ' : '  '}${name}`;
-            header.style.fontFamily = 'ui-monospace, monospace';
+            header.style.fontFamily = 'ui-monospace, Menlo, monospace';
             header.style.whiteSpace = 'pre';
             header.style.fontWeight = isActive ? '600' : '400';
+            header.style.color = isActive ? '#4caf50' : '#fff';
             header.style.opacity = isActive ? '1' : '0.6';
             section.appendChild(header);
 
@@ -339,7 +357,7 @@ export class PFExplorer {
                     continue;
                 }
                 const row = document.createElement('div');
-                row.style.paddingLeft = '14px';
+                row.style.paddingLeft = '28px';
                 row.style.fontSize = '12px';
                 row.style.fontFamily = 'ui-monospace, monospace';
                 row.style.whiteSpace = 'pre';
@@ -350,21 +368,6 @@ export class PFExplorer {
 
             card.appendChild(section);
         }
-    }
-
-    private notifyActiveHandler(): void {
-        if (this.handlerNames.length === 0) {
-            return;
-        }
-        if (this.currentHandlerIndex < 0 || this.currentHandlerIndex >= this.handlerNames.length) {
-            return;
-        }
-        const handlerName = this.handlerNames[this.currentHandlerIndex];
-        console.log('Active handler:', handlerName);
-        if (!document.pointerLockElement) {
-            return;
-        }
-        this.emitNotify({ type: 'handler', ok: true, message: `Editing ${handlerName}` });
     }
 
     private emitNotify(event: NotifyEvent): void {
