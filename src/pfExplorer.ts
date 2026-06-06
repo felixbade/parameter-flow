@@ -294,6 +294,11 @@ export class PFExplorer {
         document.addEventListener('mousemove', this._mouseMoveHandler);
 
         this._wheelHandler = ((event: WheelEvent) => {
+            if (document.pointerLockElement) {
+                // Stop horizontal scroll from triggering Chrome's
+                // swipe-to-go-back navigation gesture while editing.
+                event.preventDefault();
+            }
             this._applyHandlerInput({
                 dx: 0,
                 dy: 0,
@@ -302,7 +307,7 @@ export class PFExplorer {
             });
         }).bind(this);
 
-        document.addEventListener('wheel', this._wheelHandler);
+        document.addEventListener('wheel', this._wheelHandler, { passive: false });
 
         this._pointerLockChangeHandler = (() => {
             if (document.pointerLockElement) {
