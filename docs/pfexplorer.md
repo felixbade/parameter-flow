@@ -42,7 +42,12 @@ A single in-memory store:
 _overrides: Record<string, unknown>; // only keys the user has edited
 ```
 
-Pull model: the explorer calls `getState()` when editing starts. A key becomes edited (enters `_overrides`) only on the **first mouse/wheel input** for the active handler — entering pointer lock and browsing handlers marks nothing. Backspace clears the overrides that the current handler modifies (calls it with a zero input and checks the keys that the handler returns).
+Pull model: the explorer calls `getState()` when editing starts and overlays its
+own overrides before running a handler.
+
+Backspace clears the overrides that the current handler modifies — it runs the
+handler with a zero input and removes the keys it returns, then re-captures fresh
+values from `getState()`.
 
 ## Out of scope
 
@@ -60,7 +65,6 @@ interface PFExplorerConfig {
   handlers: Record<string, Handler>;
   getState: () => Record<string, unknown>; // required — base values at edit time
   keyboardListener?: boolean;              // default true
-  notify?: false | ((event: NotifyEvent) => void);
 }
 
 new PFExplorer(config);
@@ -72,8 +76,6 @@ new PFExplorer(config);
 - `getState` — returns the current base values for every key the handlers might
   touch. Called only during editing.
 - `keyboardListener` — set `false` to disable the built-in key bindings.
-- `notify` — `false` to silence all notifications, a function to receive
-  `NotifyEvent`s, or omit to use the built-in toast.
 
 ### Methods
 
@@ -84,15 +86,6 @@ destroy(): void;                                   // remove listeners + DOM
 
 Edited keys are `Object.keys(getOverrides())`; there is no separate accessor.
 
-### Notifications
-
-```ts
-interface NotifyEvent {
-  type: 'reset' | 'error';
-  ok: boolean;
-  message: string;
-}
-```
 
 ### Keyboard
 
@@ -106,7 +99,7 @@ interface NotifyEvent {
 
 ### Copy format
 
-Flat JSON, edited keys only, no wrapper:
+Flat JSON of the current overrides, no wrapper:
 
 ```json
 { "scale": 2.1, "rotX": 0.4 }
@@ -115,11 +108,3 @@ Flat JSON, edited keys only, no wrapper:
 The explorer does not namespace; the paste destination decides how to use the
 keys.
 
-### Card
-
-A fixed overlay (blurred background) lists **every** handler as the spine of the
-card. Under each handler it shows rows **only for that handler's edited keys** —
-unedited keys are invisible, so a handler with no edits shows just its header. The
-active handler name is highlighted in green. The card refreshes on pointer lock
-change, handler switch, edit apply, and Backspace. The title reads
-`press E to copy changes`, briefly flipping to `copied!` after a successful copy.

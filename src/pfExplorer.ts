@@ -9,17 +9,10 @@ interface Handler {
     (state: Record<string, unknown>, input: HandlerInput): Record<string, unknown>;
 }
 
-export interface NotifyEvent {
-    type: 'reset' | 'error';
-    ok: boolean;
-    message: string;
-}
-
 export interface PFExplorerConfig {
     handlers: Record<string, Handler>;
     getState: () => Record<string, unknown>;
     keyboardListener?: boolean;
-    notify?: false | ((event: NotifyEvent) => void);
 }
 
 const ZERO_INPUT: HandlerInput = { dx: 0, dy: 0, sdx: 0, sdy: 0 };
@@ -37,11 +30,9 @@ export class PFExplorer {
     private currentHandlerIndex: number;
     private readonly handlerNames: string[];
     private _isFirstMouseMove: boolean;
-    private _notify: false | ((event: NotifyEvent) => void) | undefined;
-    private _toastElement: HTMLDivElement | null;
-    private _toastTimeout: ReturnType<typeof setTimeout> | null;
     private _cardElement: HTMLDivElement | null;
-    private _copiedTimeout: ReturnType<typeof setTimeout> | null;
+    private _transientMessage: string | null;
+    private _transientTimeout: ReturnType<typeof setTimeout> | null;
     private _seededKeys: Set<string>;
 
     constructor(config: PFExplorerConfig) {
@@ -58,11 +49,9 @@ export class PFExplorer {
         this._keyboardListener = null;
         this._pointerLockChangeHandler = null;
         this._isFirstMouseMove = true;
-        this._notify = config.notify;
-        this._toastElement = null;
-        this._toastTimeout = null;
         this._cardElement = null;
-        this._copiedTimeout = null;
+        this._transientMessage = null;
+        this._transientTimeout = null;
         this._seededKeys = new Set();
 
         this._setupCard();
@@ -94,18 +83,10 @@ export class PFExplorer {
             document.removeEventListener('pointerlockchange', this._pointerLockChangeHandler);
             this._pointerLockChangeHandler = null;
         }
-        if (this._toastTimeout !== null) {
-            clearTimeout(this._toastTimeout);
-            this._toastTimeout = null;
+        if (this._transientTimeout !== null) {
+            clearTimeout(this._transientTimeout);
+            this._transientTimeout = null;
         }
-        if (this._copiedTimeout !== null) {
-            clearTimeout(this._copiedTimeout);
-            this._copiedTimeout = null;
-        }
-        if (this._toastElement?.parentNode) {
-            this._toastElement.parentNode.removeChild(this._toastElement);
-        }
-        this._toastElement = null;
         if (this._cardElement?.parentNode) {
             this._cardElement.parentNode.removeChild(this._cardElement);
         }
@@ -256,7 +237,6 @@ export class PFExplorer {
             } else if (event.key === 'Backspace') {
                 event.preventDefault();
                 this._clearActiveHandlerOverrides();
-                this.emitNotify({ type: 'reset', ok: true, message: 'Reset parameters' });
             }
         }).bind(this);
 
@@ -307,7 +287,6 @@ export class PFExplorer {
                 this._seedActiveHandler();
             } else {
                 this._clearSeeded();
-                this.dismissToast();
             }
             this._refreshCard();
         }).bind(this);
@@ -333,19 +312,22 @@ export class PFExplorer {
         const dataStr = JSON.stringify(rounded, null, 2);
         try {
             await navigator.clipboard.writeText(dataStr);
-            this._showCopied();
+            this._showTransient('copied!');
         } catch (error) {
             console.error('Failed to copy to clipboard:', error);
-            this.emitNotify({ type: 'error', ok: false, message: 'Clipboard copy failed' });
+            this._showTransient('copy failed');
         }
     }
 
-    private _showCopied(): void {
-        if (this._copiedTimeout !== null) {
-            clearTimeout(this._copiedTimeout);
+    // Briefly override the card title with a status message, then revert.
+    private _showTransient(message: string): void {
+        this._transientMessage = message;
+        if (this._transientTimeout !== null) {
+            clearTimeout(this._transientTimeout);
         }
-        this._copiedTimeout = setTimeout(() => {
-            this._copiedTimeout = null;
+        this._transientTimeout = setTimeout(() => {
+            this._transientMessage = null;
+            this._transientTimeout = null;
             this._refreshCard();
         }, 1500);
         this._refreshCard();
@@ -391,8 +373,8 @@ export class PFExplorer {
         card.replaceChildren();
 
         const title = document.createElement('div');
-        if (this._copiedTimeout !== null) {
-            title.textContent = 'copied!';
+        if (this._transientMessage !== null) {
+            title.textContent = this._transientMessage;
         } else if (document.pointerLockElement !== null) {
             title.textContent = this._editPrompt();
         } else if (Object.keys(this._overrides).length === 0) {
@@ -438,62 +420,5 @@ export class PFExplorer {
 
             card.appendChild(section);
         }
-    }
-
-    private emitNotify(event: NotifyEvent): void {
-        if (this._notify === false) {
-            return;
-        }
-        if (typeof this._notify === 'function') {
-            this._notify(event);
-            return;
-        }
-        this.showToast(event);
-    }
-
-    private showToast(event: NotifyEvent): void {
-        if (!this._toastElement) {
-            const toast = document.createElement('div');
-            toast.style.position = 'fixed';
-            toast.style.top = '16px';
-            toast.style.right = '16px';
-            toast.style.zIndex = '2147483647';
-            toast.style.pointerEvents = 'none';
-            toast.style.padding = '8px 14px';
-            toast.style.borderRadius = '10px';
-            toast.style.fontFamily = 'system-ui, sans-serif';
-            toast.style.fontSize = '13px';
-            toast.style.lineHeight = '1.2';
-            toast.style.color = 'hsl(0, 0%, 100%)';
-            toast.style.boxShadow = '0 2px 8px hsla(0, 0%, 0%, 0.3)';
-            document.body.appendChild(toast);
-            this._toastElement = toast;
-        }
-
-        const toast = this._toastElement;
-        toast.textContent = event.message;
-        toast.style.background = event.ok ? 'hsl(123, 46%, 34%)' : 'hsl(0, 66%, 47%)';
-
-        if (this._toastTimeout !== null) {
-            clearTimeout(this._toastTimeout);
-        }
-        this._toastTimeout = setTimeout(() => {
-            if (this._toastElement?.parentNode) {
-                this._toastElement.parentNode.removeChild(this._toastElement);
-            }
-            this._toastElement = null;
-            this._toastTimeout = null;
-        }, 1500);
-    }
-
-    private dismissToast(): void {
-        if (this._toastTimeout !== null) {
-            clearTimeout(this._toastTimeout);
-            this._toastTimeout = null;
-        }
-        if (this._toastElement?.parentNode) {
-            this._toastElement.parentNode.removeChild(this._toastElement);
-        }
-        this._toastElement = null;
     }
 }
