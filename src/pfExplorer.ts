@@ -455,6 +455,7 @@ export class PFExplorer {
         card.style.lineHeight = '1.4';
         card.style.color = 'hsl(0, 0%, 100%)';
         card.style.background = 'hsla(0, 0%, 0%, 0.65)';
+        card.style.border = '1px solid hsla(0, 0%, 100%, 0.08)';
         card.style.backdropFilter = 'blur(20px)';
         (card.style as any).webkitBackdropFilter = 'blur(20px)';
         card.style.boxShadow = '0 2px 8px hsla(0, 0%, 0%, 0.3)';
