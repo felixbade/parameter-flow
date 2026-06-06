@@ -9,12 +9,19 @@ interface Parameters {
     [key: string]: number;
 }
 
+export interface NotifyEvent {
+    type: 'export' | 'import' | 'reset' | 'error';
+    ok: boolean;
+    message: string;
+}
+
 interface PFEditorConfig {
     duration: number;
     variables: Parameters;
     handlers: Record<string, Handler>;
     keyboardListener?: boolean;
     clipboard?: boolean;
+    notify?: false | ((event: NotifyEvent) => void);
 }
 
 export class PFExplorer {
@@ -29,6 +36,9 @@ export class PFExplorer {
     private _initialValues: Parameters;
     private _isFirstMouseMove: boolean;
     private _useClipboard: boolean;
+    private _notify: false | ((event: NotifyEvent) => void) | undefined;
+    private _toastElement: HTMLDivElement | null;
+    private _toastTimeout: ReturnType<typeof setTimeout> | null;
 
     constructor(config: PFEditorConfig) {
         this._initialValues = { ...config.variables };
@@ -51,6 +61,9 @@ export class PFExplorer {
         this._beforeUnloadHandler = null;
         this._isFirstMouseMove = true;
         this._useClipboard = config.clipboard === true;
+        this._notify = config.notify;
+        this._toastElement = null;
+        this._toastTimeout = null;
 
         this._setupPointerLockListener();
 
@@ -99,6 +112,7 @@ export class PFExplorer {
                 event.preventDefault();
                 this.resetEditingParameters();
                 this.saveToLocalStorage();
+                this.emitNotify({ type: 'reset', ok: true, message: 'Reset parameters' });
             }
         }).bind(this);
 
@@ -217,6 +231,60 @@ export class PFExplorer {
             window.removeEventListener('beforeunload', this._beforeUnloadHandler);
             this._beforeUnloadHandler = null;
         }
+        if (this._toastTimeout !== null) {
+            clearTimeout(this._toastTimeout);
+            this._toastTimeout = null;
+        }
+        if (this._toastElement && this._toastElement.parentNode) {
+            this._toastElement.parentNode.removeChild(this._toastElement);
+        }
+        this._toastElement = null;
+    }
+
+    private emitNotify(event: NotifyEvent): void {
+        if (this._notify === false) {
+            return;
+        }
+        if (typeof this._notify === 'function') {
+            this._notify(event);
+            return;
+        }
+        this.showToast(event);
+    }
+
+    private showToast(event: NotifyEvent): void {
+        if (!this._toastElement) {
+            const toast = document.createElement('div');
+            toast.style.position = 'fixed';
+            toast.style.top = '16px';
+            toast.style.right = '16px';
+            toast.style.zIndex = '2147483647';
+            toast.style.pointerEvents = 'none';
+            toast.style.padding = '8px 14px';
+            toast.style.borderRadius = '10px';
+            toast.style.fontFamily = 'system-ui, sans-serif';
+            toast.style.fontSize = '13px';
+            toast.style.lineHeight = '1.2';
+            toast.style.color = '#fff';
+            toast.style.boxShadow = '0 2px 8px rgba(0, 0, 0, 0.3)';
+            document.body.appendChild(toast);
+            this._toastElement = toast;
+        }
+
+        const toast = this._toastElement;
+        toast.textContent = event.message;
+        toast.style.background = event.ok ? '#2e7d32' : '#c62828';
+
+        if (this._toastTimeout !== null) {
+            clearTimeout(this._toastTimeout);
+        }
+        this._toastTimeout = setTimeout(() => {
+            if (this._toastElement && this._toastElement.parentNode) {
+                this._toastElement.parentNode.removeChild(this._toastElement);
+            }
+            this._toastElement = null;
+            this._toastTimeout = null;
+        }, 1500);
     }
 
     private serializeParameters(): string {
@@ -230,13 +298,17 @@ export class PFExplorer {
             const data = JSON.parse(text);
             if (data.variables) {
                 this.loadParameters(data.variables);
+                this.emitNotify({ type: 'import', ok: true, message: 'Imported parameters' });
             } else if (data.parameters) {
                 console.error('PFExplorer does not support PFAnimation format');
+                this.emitNotify({ type: 'error', ok: false, message: 'Unsupported animation format' });
             } else {
                 console.error('Invalid file format (no `variables` key)');
+                this.emitNotify({ type: 'error', ok: false, message: 'Invalid file (no variables)' });
             }
         } catch (error) {
             console.error('Invalid file format (JSON decode error)');
+            this.emitNotify({ type: 'error', ok: false, message: 'Invalid file (JSON error)' });
         }
     }
 
@@ -245,6 +317,7 @@ export class PFExplorer {
         if (this._useClipboard) {
             await navigator.clipboard.writeText(dataStr);
             console.log('PFExplorer parameters copied to clipboard');
+            this.emitNotify({ type: 'export', ok: true, message: 'Copied to clipboard' });
             return;
         }
 
@@ -264,12 +337,18 @@ export class PFExplorer {
         link.click();
 
         URL.revokeObjectURL(link.href);
+        this.emitNotify({ type: 'export', ok: true, message: 'Downloaded' });
     }
 
     private async importParameters(): Promise<void> {
         if (this._useClipboard) {
-            const text = await navigator.clipboard.readText();
-            this.parseAndLoadParameters(text);
+            try {
+                const text = await navigator.clipboard.readText();
+                this.parseAndLoadParameters(text);
+            } catch (error) {
+                console.error('Failed to read from clipboard:', error);
+                this.emitNotify({ type: 'error', ok: false, message: 'Clipboard read failed' });
+            }
             return;
         }
 
