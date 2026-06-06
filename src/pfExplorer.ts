@@ -181,6 +181,8 @@ export class PFExplorer {
         this._pointerLockChangeHandler = (() => {
             if (document.pointerLockElement) {
                 this.notifyActiveHandler();
+            } else {
+                this.dismissToast();
             }
         }).bind(this);
 
@@ -264,6 +266,9 @@ export class PFExplorer {
         }
         const handlerName = this.handlerNames[this.currentHandlerIndex];
         console.log('Active handler:', handlerName);
+        if (!document.pointerLockElement) {
+            return;
+        }
         this.emitNotify({ type: 'handler', ok: true, message: `Editing ${handlerName}` });
     }
 
@@ -311,6 +316,17 @@ export class PFExplorer {
             this._toastElement = null;
             this._toastTimeout = null;
         }, 1500);
+    }
+
+    private dismissToast(): void {
+        if (this._toastTimeout !== null) {
+            clearTimeout(this._toastTimeout);
+            this._toastTimeout = null;
+        }
+        if (this._toastElement && this._toastElement.parentNode) {
+            this._toastElement.parentNode.removeChild(this._toastElement);
+        }
+        this._toastElement = null;
     }
 
     private serializeParameters(): string {
