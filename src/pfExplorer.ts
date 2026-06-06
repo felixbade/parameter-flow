@@ -13,9 +13,11 @@ export interface PFExplorerConfig {
     handlers: Record<string, Handler>;
     getState: () => Record<string, unknown>;
     keyboardListener?: boolean;
+    storageKey?: string;
 }
 
 const ZERO_INPUT: HandlerInput = { dx: 0, dy: 0, sdx: 0, sdy: 0 };
+const DEFAULT_STORAGE_KEY = 'pf-explorer-overrides';
 
 export class PFExplorer {
     private handlers: Record<string, Handler>;
@@ -34,6 +36,8 @@ export class PFExplorer {
     private _transientMessage: string | null;
     private _transientTimeout: ReturnType<typeof setTimeout> | null;
     private _seededKeys: Set<string>;
+    private _storageKey: string | null;
+    private _beforeUnloadHandler: (() => void) | null;
 
     constructor(config: PFExplorerConfig) {
         this.handlers = config.handlers;
@@ -53,9 +57,14 @@ export class PFExplorer {
         this._transientMessage = null;
         this._transientTimeout = null;
         this._seededKeys = new Set();
+        this._storageKey = config.storageKey ?? DEFAULT_STORAGE_KEY;
+        this._beforeUnloadHandler = null;
+
+        this._load();
 
         this._setupCard();
         this._setupPointerLockListener();
+        this._setupBeforeUnloadListener();
 
         if (config.keyboardListener !== false) {
             this._setupKeyboardListener();
@@ -90,6 +99,7 @@ export class PFExplorer {
     }
 
     public destroy(): void {
+        this._save();
         if (this._mouseMoveHandler) {
             document.removeEventListener('mousemove', this._mouseMoveHandler);
             this._mouseMoveHandler = null;
@@ -105,6 +115,10 @@ export class PFExplorer {
         if (this._pointerLockChangeHandler) {
             document.removeEventListener('pointerlockchange', this._pointerLockChangeHandler);
             this._pointerLockChangeHandler = null;
+        }
+        if (this._beforeUnloadHandler) {
+            window.removeEventListener('beforeunload', this._beforeUnloadHandler);
+            this._beforeUnloadHandler = null;
         }
         if (this._transientTimeout !== null) {
             clearTimeout(this._transientTimeout);
@@ -267,6 +281,13 @@ export class PFExplorer {
         this._keyboardListener = handleKeyPress;
     }
 
+    private _setupBeforeUnloadListener(): void {
+        this._beforeUnloadHandler = () => {
+            this._save();
+        };
+        window.addEventListener('beforeunload', this._beforeUnloadHandler);
+    }
+
     private _onHandlerSwitch(): void {
         this._clearSeeded();
         if (document.pointerLockElement) {
@@ -330,6 +351,54 @@ export class PFExplorer {
             return value.map((v) => this._round(v));
         }
         return value;
+    }
+
+    private _persistableOverrides(): Record<string, unknown> {
+        const overrides: Record<string, unknown> = {};
+        for (const [key, value] of Object.entries(this._overrides)) {
+            if (!this._seededKeys.has(key)) {
+                overrides[key] = value;
+            }
+        }
+        return overrides;
+    }
+
+    private _save(): void {
+        if (!this._storageKey) {
+            return;
+        }
+        try {
+            localStorage.setItem(this._storageKey, JSON.stringify({
+                overrides: this._persistableOverrides(),
+                handlerIndex: this.currentHandlerIndex,
+            }));
+        } catch (error) {
+            console.error('PFExplorer save failed:', error);
+        }
+    }
+
+    private _load(): void {
+        if (!this._storageKey) {
+            return;
+        }
+        try {
+            const savedData = localStorage.getItem(this._storageKey);
+            if (!savedData) {
+                return;
+            }
+            const data = JSON.parse(savedData);
+            if (data?.overrides && typeof data.overrides === 'object' && !Array.isArray(data.overrides)) {
+                this._overrides = { ...data.overrides };
+            }
+            if (typeof data?.handlerIndex === 'number' && this.handlerNames.length > 0) {
+                this.currentHandlerIndex = Math.min(
+                    Math.max(0, data.handlerIndex),
+                    this.handlerNames.length - 1,
+                );
+            }
+        } catch (error) {
+            console.error('PFExplorer load failed:', error);
+        }
     }
 
     private async _copyOverrides(): Promise<void> {

@@ -2,7 +2,7 @@
 
 `PFExplorer` is a minimal human interface for **parameter overrides**. It enables rapid exploration of parameter combinations using a pointer-locked mouse.
 
-It does not help with animation or persistence.
+It does not help with animation.
 
 ## Philosophy
 
@@ -10,6 +10,8 @@ PFExplorer covers a single axis: **human ↔ parameters**.
 
 - **HID** (human input device): pointer lock, mouse move, wheel, handler keys (to navigate between handlers).
 - **HOD** (human output device): the overlay card and clipboard copy.
+
+State is persisted to localStorage so hot reloading doesn't override the user's edits. This is simply for convenience – the philosophy is that the page reloading is a part of the workflow/HCI. Parameters are deleted with backspace.
 
 ### Ownership vs reference
 
@@ -53,8 +55,7 @@ values from `getState()`.
 
 The explorer intentionally does **not** handle:
 
-- **Persistence** — no `localStorage`, no autosave, no `beforeunload`. This would get complicated when interfacing with the timeline. A copy to clipboard is provided as convenience, but saves to files or merging with the timeline is out of scope.
-- **Animation** – edited values become static if the caller does `{ ...getCurrentValues(), ...getOverrides() }`.
+- **Animation** – edited values become static if the caller does `{ ...getCurrentValues(), ...getOverrides() }`. `PFExplorer` doesn't help merging the parameters from different sources.
 
 ## API
 
