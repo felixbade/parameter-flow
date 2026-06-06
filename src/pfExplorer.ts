@@ -251,8 +251,22 @@ export class PFExplorer {
         document.addEventListener('pointerlockchange', this._pointerLockChangeHandler);
     }
 
+    private _round(value: unknown): unknown {
+        if (typeof value === 'number') {
+            return Number(value.toPrecision(14));
+        }
+        if (Array.isArray(value)) {
+            return value.map((v) => this._round(v));
+        }
+        return value;
+    }
+
     private async _copyOverrides(): Promise<void> {
-        const dataStr = JSON.stringify(this._overrides, null, 2);
+        const rounded: Record<string, unknown> = {};
+        for (const [key, value] of Object.entries(this._overrides)) {
+            rounded[key] = this._round(value);
+        }
+        const dataStr = JSON.stringify(rounded, null, 2);
         try {
             await navigator.clipboard.writeText(dataStr);
             this.emitNotify({ type: 'copy', ok: true, message: 'Copied to clipboard' });
@@ -284,13 +298,11 @@ export class PFExplorer {
     }
 
     private _formatValue(value: unknown): string {
-        if (typeof value === 'number') {
-            return value.toFixed(4);
+        const rounded = this._round(value);
+        if (Array.isArray(rounded)) {
+            return rounded.map((v) => String(v)).join(', ');
         }
-        if (Array.isArray(value)) {
-            return value.map((v) => (typeof v === 'number' ? v.toFixed(3) : String(v))).join(', ');
-        }
-        return String(value);
+        return String(rounded);
     }
 
     private _refreshCard(): void {
