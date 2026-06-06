@@ -369,6 +369,7 @@ export class PFExplorer {
             const isEditing = isActive && document.pointerLockElement !== null;
             header.textContent = `${isActive ? '▶ ' : '  '}${name}`;
             header.style.fontFamily = 'ui-monospace, Menlo, monospace';
+            header.style.fontSize = '15px';
             header.style.whiteSpace = 'pre';
             header.style.fontWeight = isActive ? '600' : '400';
             header.style.color = isEditing ? 'hsl(120, 50%, 50%)' : 'hsl(0, 0%, 80%)';
@@ -380,7 +381,7 @@ export class PFExplorer {
                     continue;
                 }
                 const row = document.createElement('div');
-                row.style.paddingLeft = '28px';
+                row.style.paddingLeft = '36px';
                 row.style.fontSize = '12px';
                 row.style.fontFamily = 'ui-monospace, monospace';
                 row.style.whiteSpace = 'pre';
