@@ -14,6 +14,7 @@ interface PFEditorConfig {
     variables: Parameters;
     handlers: Record<string, Handler>;
     keyboardListener?: boolean;
+    clipboard?: boolean;
 }
 
 export class PFExplorer {
@@ -27,6 +28,7 @@ export class PFExplorer {
     private _beforeUnloadHandler: (() => void) | null;
     private _initialValues: Parameters;
     private _isFirstMouseMove: boolean;
+    private _useClipboard: boolean;
 
     constructor(config: PFEditorConfig) {
         this._initialValues = { ...config.variables };
@@ -48,6 +50,7 @@ export class PFExplorer {
         this._keyboardListener = null;
         this._beforeUnloadHandler = null;
         this._isFirstMouseMove = true;
+        this._useClipboard = config.clipboard === true;
 
         this._setupPointerLockListener();
 
@@ -216,11 +219,35 @@ export class PFExplorer {
         }
     }
 
-    private exportParameters(): void {
-        const data = {
+    private serializeParameters(): string {
+        return JSON.stringify({
             variables: this.parameters,
-        };
-        const dataStr = JSON.stringify(data, null, 2);
+        }, null, 2);
+    }
+
+    private parseAndLoadParameters(text: string): void {
+        try {
+            const data = JSON.parse(text);
+            if (data.variables) {
+                this.loadParameters(data.variables);
+            } else if (data.parameters) {
+                console.error('PFExplorer does not support PFAnimation format');
+            } else {
+                console.error('Invalid file format (no `variables` key)');
+            }
+        } catch (error) {
+            console.error('Invalid file format (JSON decode error)');
+        }
+    }
+
+    private async exportParameters(): Promise<void> {
+        const dataStr = this.serializeParameters();
+        if (this._useClipboard) {
+            await navigator.clipboard.writeText(dataStr);
+            console.log('PFExplorer parameters copied to clipboard');
+            return;
+        }
+
         const dataBlob = new Blob([dataStr], { type: 'application/json' });
 
         const link = document.createElement('a');
@@ -239,7 +266,13 @@ export class PFExplorer {
         URL.revokeObjectURL(link.href);
     }
 
-    private importParameters(): void {
+    private async importParameters(): Promise<void> {
+        if (this._useClipboard) {
+            const text = await navigator.clipboard.readText();
+            this.parseAndLoadParameters(text);
+            return;
+        }
+
         const input = document.createElement('input');
         input.type = 'file';
         input.accept = '.json';
@@ -248,18 +281,7 @@ export class PFExplorer {
             if (file) {
                 const reader = new FileReader();
                 reader.onload = (e) => {
-                    try {
-                        const data = JSON.parse(e.target?.result as string);
-                        if (data.variables) {
-                            this.loadParameters(data.variables);
-                        } else if (data.parameters) {
-                            console.error('PFExplorer does not support PFAnimation format');
-                        } else {
-                            console.error('Invalid file format (no `variables` key)');
-                        }
-                    } catch (error) {
-                        console.error('Invalid file format (JSON decode error)');
-                    }
+                    this.parseAndLoadParameters(e.target?.result as string);
                 };
                 reader.readAsText(file);
             }
