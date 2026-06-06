@@ -28,6 +28,7 @@ export class PFExplorer {
     private readonly handlers: Record<string, Handler>;
     private readonly getState: () => Record<string, unknown>;
     private readonly handlerKeys: Record<string, string[]>;
+    private readonly handlerInputs: Record<string, { mouse: boolean; scroll: boolean }>;
     private _overrides: Record<string, unknown>;
     private _mouseMoveHandler: ((event: MouseEvent) => void) | null;
     private _wheelHandler: ((event: WheelEvent) => void) | null;
@@ -48,6 +49,7 @@ export class PFExplorer {
         this.getState = config.getState;
         this.handlerNames = Object.keys(config.handlers);
         this.handlerKeys = this._buildHandlerKeys();
+        this.handlerInputs = this._buildHandlerInputs();
         this._overrides = {};
         this.currentHandlerIndex = 0;
 
@@ -118,6 +120,42 @@ export class PFExplorer {
             keys[name] = Object.keys(handler(base, ZERO_INPUT));
         }
         return keys;
+    }
+
+    // Probe each handler to see which input axes it responds to: mouse (dx/dy)
+    // and/or scroll (sdx/sdy). Used to phrase the editing prompt.
+    private _buildHandlerInputs(): Record<string, { mouse: boolean; scroll: boolean }> {
+        const base = this.getState();
+        const inputs: Record<string, { mouse: boolean; scroll: boolean }> = {};
+        for (const name of this.handlerNames) {
+            const handler = this.handlers[name];
+            const zero = JSON.stringify(handler(base, ZERO_INPUT));
+            const mouse = JSON.stringify(handler(base, { dx: 1, dy: 1, sdx: 0, sdy: 0 })) !== zero;
+            const scroll = JSON.stringify(handler(base, { dx: 0, dy: 0, sdx: 1, sdy: 1 })) !== zero;
+            inputs[name] = { mouse, scroll };
+        }
+        return inputs;
+    }
+
+    private _editPrompt(): string {
+        const name = this.handlerNames[this.currentHandlerIndex];
+        const usage = this.handlerInputs[name];
+        let prompt: string;
+        if (usage?.scroll && !usage.mouse) {
+            prompt = 'scroll';
+        } else if (usage?.mouse && usage.scroll) {
+            prompt = 'move the mouse and scroll';
+        } else {
+            prompt = 'move the mouse';
+        }
+
+        const hasModified = (this.handlerKeys[name] ?? []).some(
+            (key) => key in this._overrides && !this._seededKeys.has(key),
+        );
+        if (hasModified) {
+            prompt += ', backspace to reset';
+        }
+        return prompt;
     }
 
     private _mergedState(): Record<string, unknown> {
@@ -330,7 +368,7 @@ export class PFExplorer {
         card.style.backdropFilter = 'blur(20px)';
         (card.style as any).webkitBackdropFilter = 'blur(20px)';
         card.style.boxShadow = '0 2px 8px hsla(0, 0%, 0%, 0.3)';
-        card.style.minWidth = '200px';
+        card.style.minWidth = '250px';
         document.body.appendChild(card);
         this._cardElement = card;
         this._refreshCard();
@@ -353,7 +391,15 @@ export class PFExplorer {
         card.replaceChildren();
 
         const title = document.createElement('div');
-        title.textContent = this._copiedTimeout !== null ? 'copied!' : 'press E to copy changes';
+        if (this._copiedTimeout !== null) {
+            title.textContent = 'copied!';
+        } else if (document.pointerLockElement !== null) {
+            title.textContent = this._editPrompt();
+        } else if (Object.keys(this._overrides).length === 0) {
+            title.textContent = 'press enter to modify the parameters';
+        } else {
+            title.textContent = 'press E to copy changes';
+        }
         title.style.fontSize = '11px';
         title.style.opacity = '0.7';
         title.style.marginBottom = '8px';
