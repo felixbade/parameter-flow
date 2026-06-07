@@ -20,6 +20,12 @@ export interface PFExplorerConfig {
 const ZERO_INPUT: HandlerInput = { dx: 0, dy: 0, sdx: 0, sdy: 0 };
 const DEFAULT_STORAGE_KEY = 'pf-explorer-overrides';
 
+interface TrackedTouch {
+    identifier: number;
+    x: number;
+    y: number;
+}
+
 export class PFExplorer {
     private handlers: Record<string, Handler>;
     private readonly getState: () => Record<string, unknown>;
@@ -36,7 +42,8 @@ export class PFExplorer {
     private currentHandlerIndex: number;
     private handlerNames: string[];
     private _isFirstMouseMove: boolean;
-    private _lastTouch: { x: number; y: number } | null;
+    private _primaryTouch: TrackedTouch | null;
+    private _secondaryTouch: TrackedTouch | null;
     private _touchActive: boolean;
     private _cardElement: HTMLDivElement | null;
     private _titleText: string | null;
@@ -63,7 +70,8 @@ export class PFExplorer {
         this._touchMoveHandler = null;
         this._touchEndHandler = null;
         this._isFirstMouseMove = true;
-        this._lastTouch = null;
+        this._primaryTouch = null;
+        this._secondaryTouch = null;
         this._touchActive = false;
         this._cardElement = null;
         this._titleText = config.title ?? null;
@@ -349,6 +357,25 @@ export class PFExplorer {
         return index;
     }
 
+    private _touchByIdentifier(touches: TouchList, identifier: number): Touch | null {
+        for (let i = 0; i < touches.length; i++) {
+            const touch = touches[i];
+            if (touch.identifier === identifier) {
+                return touch;
+            }
+        }
+
+        return null;
+    }
+
+    private _resetTouchTracking(): void {
+        this._touchActive = false;
+        this._primaryTouch = null;
+        this._secondaryTouch = null;
+        this._clearSeeded();
+        this._refreshCard();
+    }
+
     private _setupPointerLockListener(): void {
         this._mouseMoveHandler = ((event: MouseEvent) => {
             if (this._isFirstMouseMove) {
@@ -397,41 +424,95 @@ export class PFExplorer {
 
     private _setupTouchListener(): void {
         this._touchStartHandler = ((event: TouchEvent) => {
-            if (event.touches.length !== 1) {
+            if (event.touches.length === 0) {
                 return;
             }
 
-            const handlerIndex = this._handlerIndexFromTouchTarget(event.target);
-            if (handlerIndex !== null && handlerIndex !== this.currentHandlerIndex) {
-                this.currentHandlerIndex = handlerIndex;
-                this._clearSeeded();
+            if (!this._touchActive) {
+                const handlerIndex = this._handlerIndexFromTouchTarget(event.target);
+                if (handlerIndex !== null && handlerIndex !== this.currentHandlerIndex) {
+                    this.currentHandlerIndex = handlerIndex;
+                    this._clearSeeded();
+                }
+
+                const primaryTouch = event.touches[0];
+                this._touchActive = true;
+                this._primaryTouch = {
+                    identifier: primaryTouch.identifier,
+                    x: primaryTouch.clientX,
+                    y: primaryTouch.clientY,
+                };
+                this._secondaryTouch = null;
+                this._seedActiveHandler();
             }
 
-            const touch = event.touches[0];
-            this._touchActive = true;
-            this._lastTouch = { x: touch.clientX, y: touch.clientY };
-            this._seedActiveHandler();
+            if (this._secondaryTouch === null && event.touches.length >= 2) {
+                const secondaryTouch = event.touches[1];
+                if (secondaryTouch.identifier !== this._primaryTouch?.identifier) {
+                    this._secondaryTouch = {
+                        identifier: secondaryTouch.identifier,
+                        x: secondaryTouch.clientX,
+                        y: secondaryTouch.clientY,
+                    };
+                }
+            }
+
             event.preventDefault();
         }).bind(this);
 
         this._touchMoveHandler = ((event: TouchEvent) => {
-            if (!this._touchActive || event.touches.length !== 1 || this._lastTouch === null) {
+            if (!this._touchActive || this._primaryTouch === null) {
                 return;
             }
 
-            const touch = event.touches[0];
-            const dx = touch.clientX - this._lastTouch.x;
-            const dy = touch.clientY - this._lastTouch.y;
-            this._lastTouch = { x: touch.clientX, y: touch.clientY };
-            this._applyHandlerInput({ dx, dy, sdx: 0, sdy: 0 });
+            let dx = 0;
+            let dy = 0;
+            let sdx = 0;
+            let sdy = 0;
+
+            const primaryTouch = this._touchByIdentifier(event.touches, this._primaryTouch.identifier);
+            if (primaryTouch) {
+                dx = primaryTouch.clientX - this._primaryTouch.x;
+                dy = primaryTouch.clientY - this._primaryTouch.y;
+                this._primaryTouch = {
+                    identifier: primaryTouch.identifier,
+                    x: primaryTouch.clientX,
+                    y: primaryTouch.clientY,
+                };
+            }
+
+            if (this._secondaryTouch) {
+                const secondaryTouch = this._touchByIdentifier(event.touches, this._secondaryTouch.identifier);
+                if (secondaryTouch) {
+                    sdx = this._secondaryTouch.x - secondaryTouch.clientX;
+                    sdy = this._secondaryTouch.y - secondaryTouch.clientY;
+                    this._secondaryTouch = {
+                        identifier: secondaryTouch.identifier,
+                        x: secondaryTouch.clientX,
+                        y: secondaryTouch.clientY,
+                    };
+                }
+            }
+
+            this._applyHandlerInput({ dx, dy, sdx, sdy });
             event.preventDefault();
         }).bind(this);
 
-        this._touchEndHandler = (() => {
-            this._touchActive = false;
-            this._lastTouch = null;
-            this._clearSeeded();
-            this._refreshCard();
+        this._touchEndHandler = ((event: TouchEvent) => {
+            if (!this._touchActive) {
+                return;
+            }
+
+            if (this._primaryTouch && !this._touchByIdentifier(event.touches, this._primaryTouch.identifier)) {
+                this._resetTouchTracking();
+                return;
+            }
+
+            if (this._secondaryTouch && !this._touchByIdentifier(event.touches, this._secondaryTouch.identifier)) {
+                this._secondaryTouch = null;
+            }
+
+            event.preventDefault();
         }).bind(this);
 
         window.addEventListener('touchstart', this._touchStartHandler, { passive: false });
