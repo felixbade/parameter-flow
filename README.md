@@ -99,6 +99,10 @@ const player = new TimelinePlayer({
 - Space will toggle pause.
 - 0 will seek to the start and pause.
 
+## Used by
+- [64k quirks](https://github.com/felixbade/64k-quirks) (2026)
+- [Grid Attack](https://github.com/Veikkosuhonen/Grid-Attack) (2025)
+
 ## Inspiration
 - [Rocket](https://github.com/rocket/rocket)
 - [Theatre.js](https://github.com/theatre-js/theatre)
