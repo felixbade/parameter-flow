@@ -4,24 +4,30 @@
 ![npm bundle size](https://img.shields.io/bundlephobia/min/parameter-flow)
 ![NPM](https://img.shields.io/npm/l/parameter-flow)
 
-A minimalistic yet powerful parameter timeline editor and runtime for web demos.
+Tooling for parameter-based workflows.
 
-## Key features
-- Everything is based on quintic bezier curves, making it possible to define speed and acceleration at control points in addition to values. The end result looks very smooth and the runtime code is extremely small.
-- Modifying the parameters is based on a pointer-locked mouse input, which is the best analog input widely available on desktop environments.
-- Context-sensitive parameter adjustments: for example camera panning can be made relative to its current orientation, or scaled based on how close to an SDF surface it is.
-- BPM-aware time navigation, meaning quantization that can be adjusted with hotkeys.
-- Keyframes can have a before-value and an after-value, allowing snappy transitions between two smooth time spans.
-- In-browser editor: no WebSocket hassle.
-- LocalStorage-based state allows refreshing the page without losing edits.
-- When moving to production, the localStorage state is downloaded as a json file, which can be embedded into the application.
+The library has currently three main components, which are somewhat independent of each other:
+- `TimelinePlayer`: A UI for time navigation.
+- `PFExplorer`: A UI for exploring parameter combinations.
+- `PFAnimation`: Math for animation interpolations. Very powerful but currently a bit hard to use.
 
-## Key constraints
-- Only one interpolation mode – although it is a very flexible one.
-- No integrations to any specific tools.
-- Does not control music directly, instead provides events for play/pause/seek.
-- Parameters are fully configured from the code, i.e. they can't be added from the timeline editor.
-- Time quantization happens only in the editor. The data format is continuous, and can't be converted into a spreadsheet/tracker format easily.
+### TimelinePlayer
+
+- UI: progress bar, space bar to play/pause, mouse hover to seek, 0 to seek to the beginning.
+- Events: `play`, `pause`, `seek`, `end`
+- Properties: `currentTime`, `paused`, `duration`
+- Methods: `play()`, `pause()`, `seek(time)`
+- Simple and polished edge cases.
+
+### PFExplorer
+
+The main idea is to use pointer-locked mouse input to adjust parameters. This is the most ergonomic analog input widely available without additional hardware.
+
+Another key idea is to use user-defined handlers to adjust parameters. For example, a camera panning handler can be made relative to the camera's current orientation. The unintuitive part is that these handlers take non-trivial effort to define, since they are application-specific scaffolding, but once wired, the exploration flow is insane. Intuitive handlers really level up the complexity that a human operator is able to comfortably navigate – a categorical unlock of algorithms that have rich inter-dependent parameters.
+
+### PFAnimation
+
+Quintic bezier curve workhorse. They allow very smooth (continuous second derivative) animation curves. The goal is to produce cinematic quality animations with minimal effort.
 
 ## Importing
 
