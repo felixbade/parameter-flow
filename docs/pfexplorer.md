@@ -66,6 +66,7 @@ interface PFExplorerConfig {
   handlers: Record<string, Handler>;
   getState: () => Record<string, unknown>; // required — base values at edit time
   keyboardListener?: boolean;              // default true
+  title?: string;                          // optional card heading (top)
 }
 
 new PFExplorer(config);
@@ -83,6 +84,7 @@ new PFExplorer(config);
 ```ts
 getOverrides(): Readonly<Record<string, unknown>>;     // edited keys only
 setHandlers(handlers: Record<string, Handler>): void;  // swap the live handler set
+setTitle(title: string | null): void;                 // set/clear the card heading
 destroy(): void;                                       // remove listeners + DOM
 ```
 
@@ -91,6 +93,10 @@ Edited keys are `Object.keys(getOverrides())`; there is no separate accessor.
 #### `setHandlers`
 
 Swaps the live handler set at runtime, e.g. when changing scenes. Modified parameters persist, but in export they are trimmed based on the currently visible handlers.
+
+#### `setTitle`
+
+Sets the heading shown at the top of the card — the demo writes the name of the active base parameters here (e.g. on scene change). Pass `null` or `""` to hide it. The status prompt (enter to edit / E to copy / edit hint) lives at the bottom of the card.
 
 
 ### Keyboard

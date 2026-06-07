@@ -14,6 +14,7 @@ export interface PFExplorerConfig {
     getState: () => Record<string, unknown>;
     keyboardListener?: boolean;
     storageKey?: string;
+    title?: string;
 }
 
 const ZERO_INPUT: HandlerInput = { dx: 0, dy: 0, sdx: 0, sdy: 0 };
@@ -33,6 +34,7 @@ export class PFExplorer {
     private handlerNames: string[];
     private _isFirstMouseMove: boolean;
     private _cardElement: HTMLDivElement | null;
+    private _titleText: string | null;
     private _transientMessage: string | null;
     private _transientTimeout: ReturnType<typeof setTimeout> | null;
     private _seededKeys: Set<string>;
@@ -54,6 +56,7 @@ export class PFExplorer {
         this._pointerLockChangeHandler = null;
         this._isFirstMouseMove = true;
         this._cardElement = null;
+        this._titleText = config.title ?? null;
         this._transientMessage = null;
         this._transientTimeout = null;
         this._seededKeys = new Set();
@@ -73,6 +76,13 @@ export class PFExplorer {
 
     public getOverrides(): Readonly<Record<string, unknown>> {
         return this._overrides;
+    }
+
+    // Set the card's top title (e.g. the name of the active base parameters).
+    // Pass null/empty to hide it.
+    public setTitle(title: string | null): void {
+        this._titleText = title && title.length > 0 ? title : null;
+        this._refreshCard();
     }
 
     // Swap the live handler set at runtime (e.g. when the active mode changes).
@@ -401,6 +411,19 @@ export class PFExplorer {
         }
     }
 
+    // True when at least one override key controlled by a currently visible
+    // handler has been edited (not just seeded from the base values).
+    private _hasVisibleModified(): boolean {
+        for (const name of this.handlerNames) {
+            for (const key of this.handlerKeys[name] ?? []) {
+                if (key in this._overrides && !this._seededKeys.has(key)) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
     private async _copyOverrides(): Promise<void> {
         // Only export keys controlled by the currently visible handlers; overrides
         // held in memory for other (swapped-out) handler sets are trimmed.
@@ -481,20 +504,14 @@ export class PFExplorer {
         const card = this._cardElement;
         card.replaceChildren();
 
-        const title = document.createElement('div');
-        if (this._transientMessage !== null) {
-            title.textContent = this._transientMessage;
-        } else if (document.pointerLockElement !== null) {
-            title.textContent = this._editPrompt();
-        } else if (Object.keys(this._overrides).length === 0) {
-            title.textContent = 'press enter to modify the parameters';
-        } else {
-            title.textContent = 'press E to copy changes';
+        if (this._titleText !== null) {
+            const heading = document.createElement('div');
+            heading.textContent = this._titleText;
+            heading.style.fontSize = '14px';
+            heading.style.fontWeight = '600';
+            heading.style.marginBottom = '8px';
+            card.appendChild(heading);
         }
-        title.style.fontSize = '11px';
-        title.style.opacity = '0.7';
-        title.style.marginBottom = '8px';
-        card.appendChild(title);
 
         for (let i = 0; i < this.handlerNames.length; i++) {
             const name = this.handlerNames[i];
@@ -530,5 +547,20 @@ export class PFExplorer {
 
             card.appendChild(section);
         }
+
+        const tooltip = document.createElement('div');
+        if (this._transientMessage !== null) {
+            tooltip.textContent = this._transientMessage;
+        } else if (document.pointerLockElement !== null) {
+            tooltip.textContent = this._editPrompt();
+        } else if (this._hasVisibleModified()) {
+            tooltip.textContent = 'press E to copy changes';
+        } else {
+            tooltip.textContent = 'press enter to modify the parameters';
+        }
+        tooltip.style.fontSize = '11px';
+        tooltip.style.opacity = '0.7';
+        tooltip.style.marginTop = '8px';
+        card.appendChild(tooltip);
     }
 }
