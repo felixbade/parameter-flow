@@ -30,9 +30,14 @@ export class PFExplorer {
     private _wheelHandler: ((event: WheelEvent) => void) | null;
     private _keyboardListener: ((event: KeyboardEvent) => void) | null;
     private _pointerLockChangeHandler: (() => void) | null;
+    private _touchStartHandler: ((event: TouchEvent) => void) | null;
+    private _touchMoveHandler: ((event: TouchEvent) => void) | null;
+    private _touchEndHandler: ((event: TouchEvent) => void) | null;
     private currentHandlerIndex: number;
     private handlerNames: string[];
     private _isFirstMouseMove: boolean;
+    private _lastTouch: { x: number; y: number } | null;
+    private _touchActive: boolean;
     private _cardElement: HTMLDivElement | null;
     private _titleText: string | null;
     private _transientMessage: string | null;
@@ -54,7 +59,12 @@ export class PFExplorer {
         this._wheelHandler = null;
         this._keyboardListener = null;
         this._pointerLockChangeHandler = null;
+        this._touchStartHandler = null;
+        this._touchMoveHandler = null;
+        this._touchEndHandler = null;
         this._isFirstMouseMove = true;
+        this._lastTouch = null;
+        this._touchActive = false;
         this._cardElement = null;
         this._titleText = config.title ?? null;
         this._transientMessage = null;
@@ -67,6 +77,7 @@ export class PFExplorer {
 
         this._setupCard();
         this._setupPointerLockListener();
+        this._setupTouchListener();
         this._setupBeforeUnloadListener();
 
         if (config.keyboardListener !== false) {
@@ -125,6 +136,19 @@ export class PFExplorer {
         if (this._pointerLockChangeHandler) {
             document.removeEventListener('pointerlockchange', this._pointerLockChangeHandler);
             this._pointerLockChangeHandler = null;
+        }
+        if (this._touchStartHandler) {
+            window.removeEventListener('touchstart', this._touchStartHandler);
+            this._touchStartHandler = null;
+        }
+        if (this._touchMoveHandler) {
+            window.removeEventListener('touchmove', this._touchMoveHandler);
+            this._touchMoveHandler = null;
+        }
+        if (this._touchEndHandler) {
+            window.removeEventListener('touchend', this._touchEndHandler);
+            window.removeEventListener('touchcancel', this._touchEndHandler);
+            this._touchEndHandler = null;
         }
         if (this._beforeUnloadHandler) {
             window.removeEventListener('beforeunload', this._beforeUnloadHandler);
@@ -220,7 +244,7 @@ export class PFExplorer {
     }
 
     private _applyHandlerInput(input: HandlerInput): void {
-        if (!document.pointerLockElement || this.handlerNames.length === 0) {
+        if ((!document.pointerLockElement && !this._touchActive) || this.handlerNames.length === 0) {
             return;
         }
 
@@ -351,6 +375,45 @@ export class PFExplorer {
         }).bind(this);
 
         document.addEventListener('pointerlockchange', this._pointerLockChangeHandler);
+    }
+
+    private _setupTouchListener(): void {
+        this._touchStartHandler = ((event: TouchEvent) => {
+            if (event.touches.length !== 1) {
+                return;
+            }
+
+            const touch = event.touches[0];
+            this._touchActive = true;
+            this._lastTouch = { x: touch.clientX, y: touch.clientY };
+            this._seedActiveHandler();
+            event.preventDefault();
+        }).bind(this);
+
+        this._touchMoveHandler = ((event: TouchEvent) => {
+            if (!this._touchActive || event.touches.length !== 1 || this._lastTouch === null) {
+                return;
+            }
+
+            const touch = event.touches[0];
+            const dx = touch.clientX - this._lastTouch.x;
+            const dy = touch.clientY - this._lastTouch.y;
+            this._lastTouch = { x: touch.clientX, y: touch.clientY };
+            this._applyHandlerInput({ dx, dy, sdx: 0, sdy: 0 });
+            event.preventDefault();
+        }).bind(this);
+
+        this._touchEndHandler = (() => {
+            this._touchActive = false;
+            this._lastTouch = null;
+            this._clearSeeded();
+            this._refreshCard();
+        }).bind(this);
+
+        window.addEventListener('touchstart', this._touchStartHandler, { passive: false });
+        window.addEventListener('touchmove', this._touchMoveHandler, { passive: false });
+        window.addEventListener('touchend', this._touchEndHandler);
+        window.addEventListener('touchcancel', this._touchEndHandler);
     }
 
     private _round(value: unknown): unknown {
