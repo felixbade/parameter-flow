@@ -331,6 +331,24 @@ export class PFExplorer {
         }
     }
 
+    private _handlerIndexFromTouchTarget(target: EventTarget | null): number | null {
+        if (!(target instanceof Element) || !this._cardElement?.contains(target)) {
+            return null;
+        }
+
+        const handlerElement = target.closest('[data-pf-explorer-handler-index]');
+        if (!handlerElement) {
+            return null;
+        }
+
+        const index = Number((handlerElement as HTMLElement).dataset.pfExplorerHandlerIndex);
+        if (!Number.isInteger(index) || index < 0 || index >= this.handlerNames.length) {
+            return null;
+        }
+
+        return index;
+    }
+
     private _setupPointerLockListener(): void {
         this._mouseMoveHandler = ((event: MouseEvent) => {
             if (this._isFirstMouseMove) {
@@ -381,6 +399,12 @@ export class PFExplorer {
         this._touchStartHandler = ((event: TouchEvent) => {
             if (event.touches.length !== 1) {
                 return;
+            }
+
+            const handlerIndex = this._handlerIndexFromTouchTarget(event.target);
+            if (handlerIndex !== null && handlerIndex !== this.currentHandlerIndex) {
+                this.currentHandlerIndex = handlerIndex;
+                this._clearSeeded();
             }
 
             const touch = event.touches[0];
@@ -584,6 +608,7 @@ export class PFExplorer {
             const header = document.createElement('div');
             const isActive = i === this.currentHandlerIndex;
             const isEditing = isActive && document.pointerLockElement !== null;
+            header.dataset.pfExplorerHandlerIndex = String(i);
             header.textContent = `${isActive ? '▶ ' : '  '}${name}`;
             header.style.fontFamily = 'ui-monospace, Menlo, monospace';
             header.style.fontSize = '15px';
@@ -591,6 +616,8 @@ export class PFExplorer {
             header.style.fontWeight = isActive ? '600' : '400';
             header.style.color = isEditing ? 'hsl(120, 50%, 50%)' : 'hsl(0, 0%, 80%)';
             header.style.opacity = isActive ? '1' : '0.6';
+            header.style.pointerEvents = 'auto';
+            header.style.touchAction = 'none';
             section.appendChild(header);
 
             for (const key of this.handlerKeys[name] ?? []) {
